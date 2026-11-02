@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-06",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals",
+    "binary_search"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b11-06-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "interval_representation_and_endpoint_semantics",
+    "difficulty": "medium",
+    "prompt": "Telemetry arrival checks\n\nAn immutable array contains n half-open listening windows [start,end), sorted by start and pairwise non-overlapping: end[i] ≤ start[i+1]. A stream supplies q arrival times one at a time. For each arrival t, return whether start ≤ t < end for any window, before the next arrival is supplied. The arrays support constant-time indexed reads. No preprocessing, copying or persistent index is allowed; each query must be answered from the supplied windows using only a fixed number of temporary variables.\n\nInput: windows = [[2,5],[5,8],[11,14]], arrivals = [1,5,8,13,14]\nOutput, in arrival order: [false,true,false,true,false]\n\nInput: windows = [[0,1],[9,10]], arrivals = [0,7]\nOutput: [true,false]\n\nConstraints: 2 ≤ n ≤ 200000; 1 ≤ q ≤ 200000; integer endpoints satisfy 0 ≤ start < end ≤ 1000000000; 0 ≤ t ≤ 1000000000. Arrival times have no ordering guarantee. Only comparisons of times and constant-time index arithmetic are available; do not use coordinate-indexed lookup. Choose the best worst-case total running time subject to the memory and online-answer requirements.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "predecessor-start-search",
+          "text": "For each t, binary-search for the last window whose start is at most t. Return true exactly when such a window exists and t is strictly less than its end.",
+          "grade": "correct",
+          "feedback": "The predecessor is the only possible containing window: every later window starts too late, and every earlier window ends no later than this candidate starts. The final end comparison detects gaps."
+        },
+        {
+          "optionId": "B",
+          "approachId": "successor-end-search",
+          "text": "For each t, binary-search for the first window whose end is strictly greater than t. Return true exactly when such a window exists and its start is at most t.",
+          "grade": "correct",
+          "feedback": "Non-overlap also makes ends strictly increasing. The first end beyond t is the only possible candidate; checking its start rejects a gap. This has the same cost and endpoint behavior as searching starts."
+        },
+        {
+          "optionId": "C",
+          "approachId": "restart-forward-scan",
+          "text": "For every arrival, scan windows from the beginning until a containing window is found or the next start exceeds t.",
+          "grade": "incorrect",
+          "feedback": "This is correct and uses the permitted memory, but an arrival after every window forces a full scan each time. It ignores the ability to discard half of the ordered candidates at each comparison."
+        },
+        {
+          "optionId": "D",
+          "approachId": "inclusive-end-search",
+          "text": "Binary-search for the last start at most t, then return true when t is at most that window’s end.",
+          "grade": "incorrect",
+          "feedback": "The end of a half-open window is excluded. For windows [[2,5],[9,12]] and arrival 5, this returns true although no window contains 5."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Reduce point membership in separated intervals to one boundary search and a final containment test.",
+      "details": [
+        "For each arriving time independently, use an iterative binary search over the window starts to find the last start at most that time. If none exists return false; otherwise compare the time with that candidate’s end using a strict less-than test. Keep only search bounds, a candidate index and the current time. Answer before reading the next arrival.",
+        "The last start no greater than the arrival is the only candidate in sorted disjoint windows. Its end test remains strict for half-open membership. Independent arrivals need not be chronological, so do not retain a forward-only query cursor.",
+        "“For each t, binary-search for the last window whose start is at most t. Return true exactly when such a window exists and t is strictly less than its end.”: The predecessor is the only possible containing window: every later window starts too late, and every earlier window ends no later than this candidate starts. The final end comparison detects gaps.",
+        "“For each t, binary-search for the first window whose end is strictly greater than t. Return true exactly when such a window exists and its start is at most t.”: Non-overlap also makes ends strictly increasing. The first end beyond t is the only possible candidate; checking its start rejects a gap. This has the same cost and endpoint behavior as searching starts.",
+        "“For every arrival, scan windows from the beginning until a containing window is found or the next start exceeds t.”: This is correct and uses the permitted memory, but an arrival after every window forces a full scan each time. It ignores the ability to discard half of the ordered candidates at each comparison.",
+        "“Binary-search for the last start at most t, then return true when t is at most that window’s end.”: The end of a half-open window is excluded. For windows [[2,5],[9,12]] and arrival 5, this returns true although no window contains 5."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-06-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "interval_representation_and_endpoint_semantics",
+    "difficulty": "medium",
+    "prompt": "For predecessor-start-search, what is the tightest standard worst-case total time for all q online arrivals and auxiliary space? n ≥ 2. Search directly in the supplied array; there is no preprocessing and no copy. Answers may be emitted immediately, and any collected answer list is returned output.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(n+q), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O(q log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O(nq), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(q log n), auxiliary space O(1)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-4"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each arrival performs its own logarithmic start-boundary search.",
+      "details": [
+        "Each independent binary search halves the remaining candidate range and takes logarithmic worst-case time, followed by one end check. Over q arrivals the costs add. Fixed search variables use constant auxiliary memory; there is no copy, index structure, recursion or hashing. The forward scan alternative is correct but may inspect every window for every arrival.",
+        "Time: O(q log n).",
+        "Auxiliary space: O(1).",
+        "Comparison-only online queries; n≥2; iterative binary search on immutable random-access input; returned answers excluded.",
+        "“Time O(n+q), auxiliary space O(1)”: Independent arrivals are not ordered, so a single forward scan cannot serve the entire stream. Each specified search may require logarithmically many comparisons.",
+        "“Time O(q log n), auxiliary space O(n)”: The binary search reads the original array directly and is iterative. There is no index copy or growing search stack.",
+        "“Time O(nq), auxiliary space O(1)”: A full scan describes another option. The specified binary search halves its candidate range each step, so linear work per query is not tight."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "Independent arrivals are not ordered, so a single forward scan cannot serve the entire stream. Each specified search may require logarithmically many comparisons."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-2",
+          "text": "The binary search reads the original array directly and is iterative. There is no index copy or growing search stack."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "A full scan describes another option. The specified binary search halves its candidate range each step, so linear work per query is not tight."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "predecessor-start-search",
+  "methodReveal": {
+    "title": "Analyze predecessor-start-search",
+    "description": "For each arriving time independently, use an iterative binary search over the window starts to find the last start at most that time. If none exists return false; otherwise compare the time with that candidate’s end using a strict less-than test. Keep only search bounds, a candidate index and the current time. Answer before reading the next arrival."
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-06",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-06-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "grid_as_graph",
+    "difficulty": "medium",
+    "prompt": "Sealed floor panels. A rectangular grid contains 0 for an open panel and 1 for a wall. Two open panels connect only through a shared side. Return the number of open panels from which no sequence of open panels reaches the outer boundary. Any open panel in the first or last row or column already reaches the boundary. Count panels, not regions.\n\nInput: a read-only R by C grid, 1 <= R,C <= 1000 and R*C <= 500000. Output: one integer. Do not modify the grid.\n\nExample 1: grid=[[1,0,1,1],[1,1,0,1],[1,0,0,1],[1,1,1,1]], output=3: the open panels at (1,2), (2,1), (2,2) are sealed; (0,1) is not. Coordinates are zero-based.\nExample 2: grid=[[0,1,0]], output=0: every panel lies on the boundary.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "boundary-flood",
+          "text": "Mark and enqueue every open boundary panel once. Flood through side-adjacent open panels with one shared visited grid, then count unmarked open panels.",
+          "grade": "correct",
+          "feedback": "Flooding from the boundary identifies exactly the open panels that can escape. The unmarked open panels are precisely the requested complement."
+        },
+        {
+          "optionId": "B",
+          "approachId": "component-boundary-flag",
+          "text": "Traverse each unvisited open region once, counting its panels and recording whether any lies on the boundary. Add its count only if the boundary flag stays false.",
+          "grade": "correct",
+          "feedback": "A whole connected region either reaches the boundary or does not. Keeping one shared visited grid avoids repeated exploration and has the same resource bounds as boundary flooding."
+        },
+        {
+          "optionId": "C",
+          "approachId": "all-corner-flood",
+          "text": "Flood only from open corner panels, then count unmarked open panels.",
+          "grade": "incorrect",
+          "feedback": "In grid=[[1,0,1]], the middle panel is a boundary panel but not a corner. The method counts it as sealed although the answer is zero."
+        },
+        {
+          "optionId": "D",
+          "approachId": "independent-panel-search",
+          "text": "For each open panel, run a fresh traversal with a fresh visited grid to test whether it reaches any boundary panel; count it only when that search fails.",
+          "grade": "partial",
+          "feedback": "Each independent reachability result is correct. However, panels in the same region repeatedly explore the same connections and reset the same storage; sharing visited state removes that cost."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The relevant graph is implicit: open cells are vertices and shared sides are edges. Either classify each region or compute the complement of boundary reachability.",
+      "details": [
+        "Initialize a visited grid to false and a preallocated queue of R*C coordinate slots. Scan boundary coordinates, marking and enqueuing each open, previously unmarked panel. Remove queued panels and inspect their at most four in-bounds side neighbors. Mark each newly discovered open panel before enqueueing it. Finally scan the whole grid and count open panels that remain unmarked. Do not construct adjacency lists or modify the input.",
+        "Boundary-reachable open cells are precisely the cells not sealed inside. Flood outward from all boundary openings, then count unmarked open cells, not components. Deduplicate corner seeds by marking before enqueueing.",
+        "“Mark and enqueue every open boundary panel once. Flood through side-adjacent open panels with one shared visited grid, then count unmarked open panels.”: Flooding from the boundary identifies exactly the open panels that can escape. The unmarked open panels are precisely the requested complement.",
+        "“Traverse each unvisited open region once, counting its panels and recording whether any lies on the boundary. Add its count only if the boundary flag stays false.”: A whole connected region either reaches the boundary or does not. Keeping one shared visited grid avoids repeated exploration and has the same resource bounds as boundary flooding.",
+        "“Flood only from open corner panels, then count unmarked open panels.”: In grid=[[1,0,1]], the middle panel is a boundary panel but not a corner. The method counts it as sealed although the answer is zero.",
+        "“For each open panel, run a fresh traversal with a fresh visited grid to test whether it reaches any boundary panel; count it only when that search fails.”: Each independent reachability result is correct. However, panels in the same region repeatedly explore the same connections and reset the same storage; sharing visited state removes that cost."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-06-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "grid_as_graph",
+    "difficulty": "medium",
+    "prompt": "Analyze boundary-flood as revealed. R and C are the row and column counts. Initialize an R*C boolean visited grid and a separate preallocated queue with capacity R*C. Coordinates and cell/index operations take constant time, as do queue operations using head/tail indices. Neighbor coordinates are generated directly, with no adjacency-list construction, hashing, recursion, growth amortization, input copy, or array shifting. Exclude the input grid and scalar output; include visited storage and queue. Include the final full-grid scan.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(RC) time, O(RC) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(RC) time, O(R + C) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O((RC)²) time, O(RC) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(R + C) time, O(RC) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Grid initialization, boundary flooding, and the final count are all area-bounded.",
+      "details": [
+        "The option “O(RC) time, O(RC) auxiliary space” is tight: initialization and final counting inspect RC cells, and each open cell is queued once and has at most four neighbors checked. The visited grid and reserved queue both require O(RC) storage. B mistakes the number of starting boundary coordinates for total working storage. The option “O((RC)²) time, O(RC) auxiliary space” charges for independent repeated searches, which shared marks prevent. The option “O(R + C) time, O(RC) auxiliary space” counts only the boundary and misses the required whole-grid initialization and final scan.",
+        "Time: O(RC).",
+        "Auxiliary space: O(RC)."
+      ]
+    }
+  },
+  "analyzedApproachId": "boundary-flood",
+  "methodReveal": {
+    "title": "Flood the boundary-connected complement",
+    "description": "Initialize a visited grid to false and a preallocated queue of R*C coordinate slots. Scan boundary coordinates, marking and enqueuing each open, previously unmarked panel. Remove queued panels and inspect their at most four in-bounds side neighbors. Mark each newly discovered open panel before enqueueing it. Finally scan the whole grid and count open panels that remain unmarked. Do not construct adjacency lists or modify the input."
+  }
+}

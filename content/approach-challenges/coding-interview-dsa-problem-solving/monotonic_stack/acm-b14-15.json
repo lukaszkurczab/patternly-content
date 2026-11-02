@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-15",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack",
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b14-15-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "medium",
+    "prompt": "An array of distinct signed integer keys is claimed to be a preorder traversal of a binary search tree: visit root, then its left subtree, then its right subtree; every left-subtree key is smaller than its root and every right-subtree key is larger. Decide whether any such tree exists. Do not construct a tree. Example: [8,4,6,10,9] is valid; [8,10,4] is invalid. Choose the best approach.",
+    "constraints": [
+      "The input is immutable; n is between 1 and 200,000. All integers, indices, counts, and arithmetic results fit in signed 64-bit machine words; comparisons and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "ancestor-stack-lower-bound",
+          "text": "Scan keys with an ancestor stack and an initially inactive lower bound. Reject a key at or below an active lower bound. While the key exceeds the top, pop and set the lower bound to that popped key. Push the key; accept if all keys are processed.",
+          "grade": "correct",
+          "feedback": "Popping an ancestor means its left region is complete and the traversal has entered its right side. No later key may cross below that ancestor. The remaining ancestors constrain the current unfinished path."
+        },
+        {
+          "optionId": "B",
+          "approachId": "adjacent-rise-check",
+          "text": "Reject only when a decreasing adjacent pair appears after any increasing adjacent pair.",
+          "grade": "incorrect",
+          "feedback": "A right subtree may itself have a left child. The valid preorder [8,4,6,10,9] has a decrease after increases."
+        },
+        {
+          "optionId": "C",
+          "approachId": "unique-means-valid",
+          "text": "Accept every input because the distinct keys can always be inserted into a binary search tree.",
+          "grade": "incorrect",
+          "feedback": "Insertion order is not necessarily the resulting preorder. For [8,10,4], visiting 4 after entering the right subtree of 8 violates preorder ordering."
+        },
+        {
+          "optionId": "D",
+          "approachId": "recursive-partition-rescans",
+          "text": "For each recursive segment, take its first key as root, scan to split smaller and larger keys, verify the whole right segment is larger, and recursively validate both parts.",
+          "grade": "incorrect",
+          "feedback": "This validates the property correctly but repeatedly scans long segments on skewed trees, producing quadratic work and a deep call stack. A single ancestor scan avoids those rescans."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Use completed ancestor boundaries to reject a key that re-enters a closed subtree.",
+      "details": [
+        "Keep unresolved ancestors. Every upward transition pops smaller ancestors and activates a lower boundary that future keys must exceed. Reject crossing that boundary; otherwise add the current key to the unresolved path.",
+        "Popping ancestors means entering a right subtree, which activates a lower bound for every later key. Reject any key at or below that bound. Local parent comparisons alone cannot enforce all earlier ancestors.",
+        "“Scan keys with an ancestor stack and an initially inactive lower bound. Reject a key at or below an active lower bound. While the key exceeds the top, pop and set the lower bound to that popped key. Push the key; accept if all keys are processed.”: Popping an ancestor means its left region is complete and the traversal has entered its right side. No later key may cross below that ancestor. The remaining ancestors constrain the current unfinished path.",
+        "“Reject only when a decreasing adjacent pair appears after any increasing adjacent pair.”: A right subtree may itself have a left child. The valid preorder [8,4,6,10,9] has a decrease after increases.",
+        "“Accept every input because the distinct keys can always be inserted into a binary search tree.”: Insertion order is not necessarily the resulting preorder. For [8,10,4], visiting 4 after entering the right subtree of 8 violates preorder ordering.",
+        "“For each recursive segment, take its first key as root, scan to split smaller and larger keys, verify the whole right segment is larger, and recursively validate both parts.”: This validates the property correctly but repeatedly scans long segments on skewed trees, producing quadratic work and a deep call stack. A single ancestor scan avoids those rescans."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-15-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "medium",
+    "prompt": "For ancestor-stack-lower-bound, choose the tightest worst-case time and auxiliary-space pair. Let n be the key count. Keep the input immutable, use an iterative stack, and represent an absent lower bound with a validity flag. No tree or recursive frames are allocated.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One stack lifetime per key yields linear preorder validation.",
+      "details": [
+        "The inner pop loop removes ancestors that will never reenter the stack. Across n keys there are at most n pops, so total time is O(n), despite a single key causing many pops. A valid decreasing preorder keeps n unresolved ancestors, showing why O(1) helper space is incorrect. No sorting occurs.",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "ancestor-stack-lower-bound",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "Keep unresolved ancestors. Every upward transition pops smaller ancestors and activates a lower boundary that future keys must exceed. Reject crossing that boundary; otherwise add the current key to the unresolved path."
+  }
+}

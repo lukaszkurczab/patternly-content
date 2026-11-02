@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-07",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-07-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "visited_state_and_cycles",
+    "difficulty": "medium",
+    "prompt": "Two review panels. An undirected conflict graph lists pairs of reviewers who must be assigned to different panels. Decide whether all V reviewers can be assigned to two panels. A panel may be empty; disconnected reviewers still need assignments. Return one boolean, not an assignment.\n\nInput: read-only adjacency lists for IDs 0 through V-1; 1 <= V <= 200000, 0 <= E <= 400000. No duplicate edges or self-loops; each edge occurs in both lists.\n\nExample 1: lists=[[1,3],[0,2],[1,3],[0,2]], output=true.\nExample 2: lists=[[1,2],[0,2],[0,1]], output=false: three mutually conflicting reviewers cannot use only two panels.\nExample 3: lists=[[],[2],[1]], output=true.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "two-color-bfs",
+          "text": "Keep unassigned/red/blue states. At every unassigned vertex, start a queue traversal with either color. Give each new neighbor the opposite color; return false if any edge joins equal colors.",
+          "grade": "correct",
+          "feedback": "Every edge requires opposite colors. Propagation fixes all relative assignments in a component, so a conflict disproves any possible two-panel assignment; disconnected components can start independently."
+        },
+        {
+          "optionId": "B",
+          "approachId": "two-color-dfs",
+          "text": "Use a shared color array and an iterative depth-first forest, assigning opposite colors across edges and rejecting an edge with equal endpoint colors.",
+          "grade": "correct",
+          "feedback": "Stack order changes the traversal order but not the opposite-color constraint. This has the same resource bounds as the queue traversal."
+        },
+        {
+          "optionId": "C",
+          "approachId": "reject-any-cycle",
+          "text": "Return false whenever the graph contains any cycle; otherwise return true.",
+          "grade": "incorrect",
+          "feedback": "The four-vertex cycle in Example 1 has an alternating two-color assignment. Only odd cycles prevent a two-panel assignment, so rejecting all cycles discards legal solutions."
+        },
+        {
+          "optionId": "D",
+          "approachId": "enumerate-panel-assignments",
+          "text": "Enumerate every red/blue assignment and test all conflict edges for each assignment until a valid one is found.",
+          "grade": "incorrect",
+          "feedback": "This is correct in principle, but its exhaustive assignment search is needlessly inefficient. A single constraint propagation through each component either constructs a consistent coloring or proves a conflict; enumeration does not use that structure."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A visited marker alone is insufficient: the traversal must preserve the relative two-way assignment constraint and check edges to already colored vertices.",
+      "details": [
+        "Allocate a color array initialized to unassigned. Scan every vertex. For an unassigned root, choose red and enqueue it. When processing a vertex, assign each unassigned neighbor the opposite color before enqueueing it. If a neighbor already has the same color, return false. If all components finish without a conflict, return true.",
+        "Every edge forces opposite colors. A same-color edge proves impossibility, including an odd cycle. Restart in each uncolored component; disconnected reviewers still require assignments even when no edge connects them to the first root.",
+        "“Keep unassigned/red/blue states. At every unassigned vertex, start a queue traversal with either color. Give each new neighbor the opposite color; return false if any edge joins equal colors.”: Every edge requires opposite colors. Propagation fixes all relative assignments in a component, so a conflict disproves any possible two-panel assignment; disconnected components can start independently.",
+        "“Use a shared color array and an iterative depth-first forest, assigning opposite colors across edges and rejecting an edge with equal endpoint colors.”: Stack order changes the traversal order but not the opposite-color constraint. This has the same resource bounds as the queue traversal.",
+        "“Return false whenever the graph contains any cycle; otherwise return true.”: The four-vertex cycle in Example 1 has an alternating two-color assignment. Only odd cycles prevent a two-panel assignment, so rejecting all cycles discards legal solutions.",
+        "“Enumerate every red/blue assignment and test all conflict edges for each assignment until a valid one is found.”: This is correct in principle, but its exhaustive assignment search is needlessly inefficient. A single constraint propagation through each component either constructs a consistent coloring or proves a conflict; enumeration does not use that structure."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-07-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "visited_state_and_cycles",
+    "difficulty": "medium",
+    "prompt": "Analyze two-color-bfs. V counts all reviewers and E undirected conflict edges, represented twice. Initialize a V-entry color array, scan all roots and use one preallocated V-slot FIFO queue with head/tail indices. Array and queue operations take constant time; no hashing, recursion, copying, or amortized growth is used. Exclude the read-only lists and boolean output; include colors and queue. Use the worst case without early conflict.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(2^V (V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V²) time, O(V²) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Color each vertex once and inspect every conflict edge a bounded number of times.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: color initialization and the root scan cost V, each vertex is enqueued at most once, and 2E adjacency entries are inspected. Colors and the reserved queue occupy O(V). The option “O(V + E) time, O(1) auxiliary space” omits them. C is the exhaustive assignment method, not the revealed propagation. The option “O(V²) time, O(V²) auxiliary space” assumes a matrix representation and misses that sparse lists can be scanned directly.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "two-color-bfs",
+  "methodReveal": {
+    "title": "Two-color queue traversal",
+    "description": "Allocate a color array initialized to unassigned. Scan every vertex. For an unassigned root, choose red and enqueue it. When processing a vertex, assign each unassigned neighbor the opposite color before enqueueing it. If a neighbor already has the same color, return false. If all components finish without a conflict, return true."
+  }
+}

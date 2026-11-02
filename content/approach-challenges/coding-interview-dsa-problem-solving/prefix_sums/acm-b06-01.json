@@ -1,10 +1,12 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
   "problemId": "acm-b06-01",
-  "problemVersion": "1",
+  "problemVersion": "2",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "prefix_sums",
-  "requiredFamilyIds": ["prefix_sums"],
+  "requiredFamilyIds": [
+    "prefix_sums"
+  ],
   "difficulty": "medium",
   "approachQuestion": {
     "questionId": "acm-b06-01-q1",
@@ -54,15 +56,22 @@
         }
       ]
     },
-    "answer": { "type": "approach_choice" },
+    "answer": {
+      "type": "approach_choice"
+    },
     "feedback": {
       "type": "approach_choice",
       "reason": "The sequence is reused across many range requests, so separate the one-time preparation from answering each request. Inclusive endpoints require a deliberate prefix-array boundary convention.",
-      "details": {
-        "expectedApproachId": "prefix-array-range-difference",
-        "rangeConvention": "P[k] is the sum of indices 0 through k−1; therefore an inclusive [left, right] uses P[right+1]−P[left].",
-        "preparationVersusQueries": "The sequence is fixed while q requests are answered; preparing once avoids rescanning overlapping ranges."
-      }
+      "details": [
+        "Create P with a zero at the front. At each position, store the previous cumulative total plus the current measurement. A requested inclusive range is the cumulative total just after its right endpoint minus the total just before its left endpoint. This also handles a range starting at zero without a special case.",
+        "The two prefixes share exactly the entries before left, which cancel. The leading zero also makes left=0 obey the same formula; without right+1 the inclusive endpoint is omitted.",
+        "P[k] is the sum of indices 0 through k−1; therefore an inclusive [left, right] uses P[right+1]−P[left].",
+        "The sequence is fixed while q requests are answered; preparing once avoids rescanning overlapping ranges.",
+        "“Build a cumulative array P of length n + 1 with P[0] = 0 and P[i + 1] = P[i] + measurements[i]. For each inclusive request [left, right], return P[right + 1] − P[left].”: The leading zero makes the same subtraction work when a range begins at index zero; adding one to the right endpoint includes that endpoint.",
+        "“For every request, walk from left through right and add those measurements directly, without preparing shared data.”: This returns the right sum for every valid range, but repeatedly adds values from overlapping ranges. The same cumulative information can serve more than one request.",
+        "“Build P with P[0] = 0, then answer [left, right] as P[right] − P[left].”: The subtraction omits the value at right and also gives zero for a one-element range at index zero. For measurements [6, −2, 5] and request [0, 0], it returns 0 instead of 6.",
+        "“Sort the measurements once, then use cumulative sums in the sorted sequence to answer the original index ranges.”: A range is defined by positions in the received sequence. Sorting changes which values those positions contain; for [2, 7, −4], request [0, 0] must return 2, while either ascending or descending sort puts a different value first."
+      ]
     }
   },
   "complexityQuestion": {
@@ -76,24 +85,40 @@
       "type": "choice_single",
       "scoringMethod": "exact_selected_set",
       "options": [
-        { "optionId": "linear-plus-q_constant", "text": "O(n + q) time and O(n) auxiliary space" },
-        { "optionId": "nq_constant", "text": "O(nq) time and O(n) auxiliary space" },
-        { "optionId": "n_plus_q_constant", "text": "O(n + q) time and O(1) auxiliary space" },
-        { "optionId": "n_log_n_plus_q", "text": "O(n log n + q) time and O(n) auxiliary space" }
+        {
+          "optionId": "linear-plus-q_constant",
+          "text": "O(n + q) time and O(n) auxiliary space"
+        },
+        {
+          "optionId": "nq_constant",
+          "text": "O(nq) time and O(n) auxiliary space"
+        },
+        {
+          "optionId": "n_plus_q_constant",
+          "text": "O(n + q) time and O(1) auxiliary space"
+        },
+        {
+          "optionId": "n_log_n_plus_q",
+          "text": "O(n log n + q) time and O(n) auxiliary space"
+        }
       ]
     },
-    "answer": { "type": "choice_single", "optionId": "linear-plus-q_constant" },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-plus-q_constant"
+    },
     "feedback": {
       "type": "choice_single",
-      "reason": "The cumulative array is filled in one pass, then each of the q requests uses two stored prefix values and a subtraction. The array stores n+1 sums.",
-      "details": {
-        "expectedPair": "O(n + q) time; O(n) auxiliary space",
-        "timeDerivation": "Building P visits each measurement once. Answering q requests performs constant work per request, for n + q total work.",
-        "spaceDerivation": "P stores n+1 cumulative values. The output array is the required result and is excluded from auxiliary space; the supplied measurements and requests are input and are also excluded.",
-        "integerModel": "All prefix and range sums fit signed 64-bit integers by the task constraints.",
-        "boundaryCheck": "P[0]=0; [0,0] is P[1]−P[0], while [left,right] always includes right through P[right+1].",
-        "methodComparison": "The target builds cumulative boundaries once and reuses them. Directly summing every requested range revisits values shared by overlapping ranges and can take O(nq) total time. Sorting changes the meaning of the original indices, and using P[right]−P[left] omits the inclusive right endpoint. The selected target uses O(n+q) time and O(n) auxiliary space, while the direct-scan alternative uses O(nq) worst-case time and O(1) auxiliary space."
-      }
+      "reason": "Prepare n+1 totals once and do fixed work per query.",
+      "details": [
+        "The cumulative array is filled in one pass, then each of the q requests uses two stored prefix values and a subtraction. The array stores n+1 sums.",
+        "O(n + q) time; O(n) auxiliary space",
+        "Building P visits each measurement once. Answering q requests performs constant work per request, for n + q total work.",
+        "P stores n+1 cumulative values. The output array is the required result and is excluded from auxiliary space; the supplied measurements and requests are input and are also excluded.",
+        "All prefix and range sums fit signed 64-bit integers by the task constraints.",
+        "P[0]=0; [0,0] is P[1]−P[0], while [left,right] always includes right through P[right+1].",
+        "The target builds cumulative boundaries once and reuses them. Directly summing every requested range revisits values shared by overlapping ranges and can take O(nq) total time. Sorting changes the meaning of the original indices, and using P[right]−P[left] omits the inclusive right endpoint. The selected target uses O(n+q) time and O(n) auxiliary space, while the direct-scan alternative uses O(nq) worst-case time and O(1) auxiliary space."
+      ]
     }
   },
   "analyzedApproachId": "prefix-array-range-difference",

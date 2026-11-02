@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b18-17",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "backtracking",
+  "requiredFamilyIds": [
+    "backtracking",
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b18-17-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "grid_search_backtracking",
+    "prompt": "Routes Without Revisits\n\nGiven a directed graph, list all simple paths from vertex s to distinct vertex t. A simple path has no repeated vertex. Return each path as its vertex sequence, once, in any order. Stop a path as soon as it reaches t.\n\nExamples:\nn=4, outgoing=[[1,2],[2,3],[1,3],[]], s=0,t=3 -> [[0,1,3],[0,1,2,3],[0,2,3],[0,2,1,3]].\nn=2, outgoing=[[],[]], s=0,t=1 -> [].\n\nConstraints: 2 <= n <= 12; no repeated directed edges or self loops; adjacency lists are supplied. Cycles are allowed. 0 <= s,t < n and s!=t.",
+    "constraints": [],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "acm-b18-17-search",
+          "text": "Explore every outgoing edge to a vertex not on the current path, undoing that vertex’s mark on return. Copy paths at t and stop extending them.",
+          "grade": "correct",
+          "feedback": "A repeated vertex is forbidden within one path, but another path may use it. Branch-local membership prevents cycles without suppressing alternative routes."
+        },
+        {
+          "optionId": "B",
+          "approachId": "acm-b18-17-alternative-1",
+          "text": "Permanently mark a vertex after its first visit, as in a reachability search.",
+          "grade": "incorrect",
+          "feedback": "In the first example, reaching vertex 2 through 1 would prevent later exploring the distinct path [0,2,3]."
+        },
+        {
+          "optionId": "C",
+          "approachId": "acm-b18-17-alternative-2",
+          "text": "Do not track path membership; instead cap every attempted path at n vertices and emit any path reaching t within that cap.",
+          "grade": "incorrect",
+          "feedback": "For n=5, outgoing=[[1],[0,4],[],[],[]], s=0,t=4, this accepts [0,1,0,1,4]: its five vertices fit the cap, but vertices 0 and 1 repeat."
+        },
+        {
+          "optionId": "D",
+          "approachId": "acm-b18-17-extra-work",
+          "text": "Carry a fresh copied n-entry membership array in every child call instead of applying and undoing one mark.",
+          "grade": "partial",
+          "feedback": "This is correct but copies the full vertex state for every branch; reversible single-entry updates avoid that extra work."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A repeated vertex is forbidden within one path, but another path may use it. Branch-local membership prevents cycles without suppressing alternative routes.",
+      "details": [
+        "Allocate n path-membership flags and mark s. At a nonterminal call scan outgoing neighbors, recurse only on unmarked vertices after appending and marking them, then undo both changes. At t copy the current path and return without scanning its outgoing edges.",
+        "Visited flags mean membership in the current route, not permanent discovery. Unmark on return so another simple route may reuse the vertex. At t emit and stop that branch rather than extending beyond the destination.",
+        "“Explore every outgoing edge to a vertex not on the current path, undoing that vertex’s mark on return. Copy paths at t and stop extending them.”: A repeated vertex is forbidden within one path, but another path may use it. Branch-local membership prevents cycles without suppressing alternative routes.",
+        "“Permanently mark a vertex after its first visit, as in a reachability search.”: In the first example, reaching vertex 2 through 1 would prevent later exploring the distinct path [0,2,3].",
+        "“Do not track path membership; instead cap every attempted path at n vertices and emit any path reaching t within that cap.”: For n=5, outgoing=[[1],[0,4],[],[],[]], s=0,t=4, this accepts [0,1,0,1,4]: its five vertices fit the cap, but vertices 0 and 1 repeat.",
+        "“Carry a fresh copied n-entry membership array in every child call instead of applying and undoing one mark.”: This is correct but copies the full vertex state for every branch; reversible single-entry updates avoid that extra work."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b18-17-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "grid_search_backtracking",
+    "prompt": "Analyze `acm-b18-17-search` only. Let V count calls, E count outgoing-list entries scanned across all nonterminal calls, and R count vertex IDs copied into returned paths. Initialize n flags; each append/mark/undo is constant amortized work. Choose the tightest stated time and auxiliary-space pair. Count recursion and mutable working state; exclude supplied input and returned output storage, but include copying work in time. Primitive integer/index operations and preallocated-array updates cost constant time; dynamic appends are amortized constant time. No hashing is used unless explicitly stated.",
+    "constraints": [],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n + V + E + R) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "cost-0",
+          "text": "O(n+m+R) time, O(n) auxiliary space, with m the graph edge count"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(n + V + E + R) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "cost-2",
+          "text": "O(n + V + R) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Count actual path-state edge scans; a vertex may be revisited on different routes.",
+      "details": [
+        "Flags initialize in n work; calls contribute V and adjacency scanning E, with result copying R. A vertex’s adjacency list may be scanned on many different paths.",
+        "An n-entry membership array and one path/stack of length at most n are retained.",
+        "Let V count calls, E count outgoing-list entries scanned across all nonterminal calls, and R count vertex IDs copied into returned paths. Initialize n flags; each append/mark/undo is constant amortized work.",
+        "“O(n+m+R) time, O(n) auxiliary space, with m the graph edge count”: An edge may be scanned repeatedly for different path prefixes.",
+        "“O(n + V + E + R) time, O(V) auxiliary space”: The full call tree is not stored.",
+        "“O(n + V + R) time, O(n) auxiliary space”: Neighbor entries rejected by membership checks still cost scan work."
+      ]
+    }
+  },
+  "analyzedApproachId": "acm-b18-17-search",
+  "methodReveal": {
+    "title": "Forbid only the active path",
+    "description": "Allocate n path-membership flags and mark s. At a nonterminal call scan outgoing neighbors, recurse only on unmarked vertices after appending and marking them, then undo both changes. At t copy the current path and return without scanning its outgoing edges."
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-17",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b14-17-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "A row of integer levels evolves in simultaneous rounds. In each round remove every entry whose immediate left neighbor at the START of that round has a strictly greater level; the first entry is never removed that round. Continue until a round removes nothing. Return the number of rounds that removed at least one entry. Example: [5,1,2,3] returns 3, with rows [5,2,3], [5,3], then [5]. Equal neighbors do not trigger removal. Choose the best approach.",
+    "constraints": [
+      "The input is immutable; n is between 1 and 200,000. All integers, indices, counts, and arithmetic results fit in signed 64-bit machine words; comparisons and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "stack-removal-delays",
+          "text": "Scan left to right, storing (level, removalRound). Start delay=0. Pop while the top level is at most the current level, setting delay=max(delay,popped removalRound). If the stack becomes empty set delay=0; otherwise increase delay by 1. Push the current pair and maximize the answer over delays.",
+          "grade": "correct",
+          "feedback": "Smaller or equal predecessors cannot directly remove the current entry, but may delay exposure to a surviving greater predecessor. The maximum removed-block delay determines when that exposure occurs; if no greater predecessor remains, the current entry survives."
+        },
+        {
+          "optionId": "B",
+          "approachId": "initial-decreasing-pairs",
+          "text": "Return 1 if the original row has any decreasing adjacent pair, otherwise return 0.",
+          "grade": "incorrect",
+          "feedback": "New decreasing adjacencies appear later. For [5,1,2,3], the process lasts 3 rounds, not 1."
+        },
+        {
+          "optionId": "C",
+          "approachId": "sum-popped-delays",
+          "text": "Use the delay stack, but add every popped removalRound instead of taking their maximum before adding 1.",
+          "grade": "incorrect",
+          "feedback": "Several predecessors disappear in parallel. For [10,3,2,4,5], the correct rounds for the last two entries are 2 and 3; summing popped delays makes the final delay 4 instead of 3."
+        },
+        {
+          "optionId": "D",
+          "approachId": "rescan-simultaneous-rounds",
+          "text": "Repeatedly scan the entire current row, mark all entries with greater left neighbors, and build the next row after the scan.",
+          "grade": "incorrect",
+          "feedback": "This simulates correctly, but [n,1,2,...,n-1] removes just one entry per round and repeatedly scans long rows, causing quadratic work."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Track removal delays across dominated blockers instead of simulating every round.",
+      "details": [
+        "Assign each entry its disappearance round, or zero if it survives. Remove smaller or equal stack candidates while retaining the largest delay among them. A remaining larger predecessor removes the entry one round after that delay; without one the entry survives. Track the maximum assigned round.",
+        "Simultaneous deletion means a blocker may disappear only after earlier blockers have disappeared. Carry the largest popped delay, then add one if a larger predecessor remains. Immediate sequential deletion would model different rounds.",
+        "“Scan left to right, storing (level, removalRound). Start delay=0. Pop while the top level is at most the current level, setting delay=max(delay,popped removalRound). If the stack becomes empty set delay=0; otherwise increase delay by 1. Push the current pair and maximize the answer over delays.”: Smaller or equal predecessors cannot directly remove the current entry, but may delay exposure to a surviving greater predecessor. The maximum removed-block delay determines when that exposure occurs; if no greater predecessor remains, the current entry survives.",
+        "“Return 1 if the original row has any decreasing adjacent pair, otherwise return 0.”: New decreasing adjacencies appear later. For [5,1,2,3], the process lasts 3 rounds, not 1.",
+        "“Use the delay stack, but add every popped removalRound instead of taking their maximum before adding 1.”: Several predecessors disappear in parallel. For [10,3,2,4,5], the correct rounds for the last two entries are 2 and 3; summing popped delays makes the final delay 4 instead of 3.",
+        "“Repeatedly scan the entire current row, mark all entries with greater left neighbors, and build the next row after the scan.”: This simulates correctly, but [n,1,2,...,n-1] removes just one entry per round and repeatedly scans long rows, causing quadratic work."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-17-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "For stack-removal-delays, choose the tightest worst-case time and auxiliary-space pair. Let n be the original row length. Use an iterative stack of level/round pairs and a scalar maximum. No round-by-round row copies are made.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One delay update per pop bounds the full simulation to linear work.",
+      "details": [
+        "Each entry is pushed once and popped at most once. Maximum-delay updates cost constant time per pop, giving O(n) total time. A strictly decreasing row retains n stack entries, so auxiliary space is O(n).",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "stack-removal-delays",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "Assign each entry its disappearance round, or zero if it survives. Remove smaller or equal stack candidates while retaining the largest delay among them. A remaining larger predecessor removes the entry one round after that delay; without one the entry survives. Track the maximum assigned round."
+  }
+}

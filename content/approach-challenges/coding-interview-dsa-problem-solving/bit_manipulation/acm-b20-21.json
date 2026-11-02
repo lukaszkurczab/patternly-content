@@ -1,0 +1,128 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b20-21",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "bit_manipulation",
+  "requiredFamilyIds": [
+    "bit_manipulation"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b20-21-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "bit_manipulation",
+    "mentalUnitId": "carry_propagation_without_data_addition",
+    "difficulty": "medium",
+    "prompt": "Implement addition of two unsigned W-bit operands a and b modulo 2^W. Data arithmetic operators + and - are unavailable; bitwise operators, logical shifts and comparisons are available. Loop-index increments are allowed. Return the W-bit sum.\n\nConstraints: 1 <= W <= 64; 0 <= a,b < 2^W. Overflow is discarded.\nExample: W=8, a=23, b=19 -> 42. Edge case: W=4, a=15, b=1 -> 0.\n\nChoose the best approach under these constraints.",
+    "constraints": [
+      "W is a parameter. Each word-level XOR, AND, OR and logical shift costs constant time. Left shifts discard bits above position W-1. Operands may be copied into scalar temporaries.",
+      "Inputs are read-only. Include all temporary storage and any call stack; exclude the supplied input and the returned output. No input copy is implicit."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "iterate-sum-and-carry",
+          "text": "While b is nonzero, simultaneously compute newA=a XOR b and newB=(a AND b) shifted left by one, then replace a,b by those two words. Return a.",
+          "grade": "correct",
+          "feedback": "XOR computes the sum without carries, and AND identifies carries shifted into the next position. Simultaneous updates preserve the modular sum until no carry remains."
+        },
+        {
+          "optionId": "B",
+          "approachId": "ripple-one-position-at-a-time",
+          "text": "Process positions from low to high, storing one Boolean carry. Write the XOR of both operand bits and the carry to the result; next carry is true when at least two of the three input bits are one.",
+          "grade": "correct",
+          "feedback": "A full-adder rule propagates the exact carry through all W positions. It has the same worst-case time and auxiliary-word bounds as the parallel carry iteration."
+        },
+        {
+          "optionId": "C",
+          "approachId": "return-or",
+          "text": "Return a OR b.",
+          "grade": "incorrect",
+          "feedback": "OR does not propagate carry. With W=4 and a=b=1, it returns 1 instead of 2."
+        },
+        {
+          "optionId": "D",
+          "approachId": "overwrite-before-carry",
+          "text": "Set a=a XOR b first, then compute b=(a AND b) shifted left by one using the overwritten a. Repeat until b is zero.",
+          "grade": "incorrect",
+          "feedback": "It loses the old bits needed for carry. With W=4 and a=b=1, the first overwrite sets a to zero, losing the carry that should produce 2."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "XOR computes sum bits without carry, while shifted AND computes carry from the same old operands.",
+      "details": [
+        "Keep the two current words in scalar variables. In each iteration compute both the carry-free XOR word and shifted carry word from the same old operands, then replace both variables. Mask through the W-bit word semantics and stop when the carry word is zero.",
+        "XOR computes sum bits without carry, while shifted AND computes carry from the same old operands. Updating one operand too early corrupts the other result. Carries move upward and eventually vanish under modular W-bit semantics.",
+        "“While b is nonzero, simultaneously compute newA=a XOR b and newB=(a AND b) shifted left by one, then replace a,b by those two words. Return a.”: XOR computes the sum without carries, and AND identifies carries shifted into the next position. Simultaneous updates preserve the modular sum until no carry remains.",
+        "“Process positions from low to high, storing one Boolean carry. Write the XOR of both operand bits and the carry to the result; next carry is true when at least two of the three input bits are one.”: A full-adder rule propagates the exact carry through all W positions. It has the same worst-case time and auxiliary-word bounds as the parallel carry iteration.",
+        "“Return a OR b.”: OR does not propagate carry. With W=4 and a=b=1, it returns 1 instead of 2.",
+        "“Set a=a XOR b first, then compute b=(a AND b) shifted left by one using the overwritten a. Repeat until b is zero.”: It loses the old bits needed for carry. With W=4 and a=b=1, the first overwrite sets a to zero, losing the carry that should produce 2."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b20-21-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "bit_manipulation",
+    "mentalUnitId": "carry_propagation_without_data_addition",
+    "difficulty": "medium",
+    "prompt": "For iterate-sum-and-carry, choose the tightest worst-case time and auxiliary-space pair. Let W be the width. Analyze the iterative simultaneous-update approach, including a carry chain spanning the whole word.",
+    "constraints": [
+      "W is a parameter. Each word-level XOR, AND, OR and logical shift costs constant time. Left shifts discard bits above position W-1. Operands may be copied into scalar temporaries.",
+      "Inputs are read-only. Include all temporary storage and any call stack; exclude the supplied input and the returned output. No input copy is implicit."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "O(W) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "O(1) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "O(W) time, O(W) auxiliary space"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "O(W²) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-1"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "At most W carry iterations retain only old/new word operands.",
+      "details": [
+        "Each remaining carry moves toward more significant positions and cannot move backward. There are at most W iterations; all-ones plus one realizes a full-width carry chain. A fixed number of words stores old operands and new results.",
+        "Time: O(W).",
+        "Auxiliary space: O(1).",
+        "W is a parameter. Each word-level XOR, AND, OR and logical shift costs constant time. Left shifts discard bits above position W-1. Operands may be copied into scalar temporaries.",
+        "“O(1) time, O(1) auxiliary space”: A carry can travel through all W positions, so one word operation does not imply a single iteration.",
+        "“O(W) time, O(W) auxiliary space”: No per-position array or recursive stack is retained.",
+        "“O(W²) time, O(1) auxiliary space”: Each iteration uses word-level operations, not an inner scan across W positions."
+      ]
+    }
+  },
+  "analyzedApproachId": "iterate-sum-and-carry",
+  "methodReveal": {
+    "title": "Method to analyze",
+    "description": "Keep the two current words in scalar variables. In each iteration compute both the carry-free XOR word and shifted carry word from the same old operands, then replace both variables. Mask through the W-bit word semantics and stop when the carry word is zero."
+  }
+}

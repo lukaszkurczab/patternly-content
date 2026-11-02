@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-20",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b12-20-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "hard",
+    "prompt": "Mutual forwarding groups. A directed graph describes possible message forwarding. Partition all vertices into maximal groups in which every vertex can reach every other vertex. Return an array group of V integers: group[u]=group[v] exactly when u and v are mutually reachable. Group numbers and group order are arbitrary. A single isolated vertex forms its own group.\n\nInput: read-only outgoing lists for IDs 0..V-1, 1 <= V <= 200000, 0 <= E <= 400000. No duplicate edges; self-loops are allowed. Output groups must distinguish one-way reachability from mutual reachability.\n\nExample: lists=[[1],[0,2],[3],[2],[]], one valid output=[0,0,1,1,2].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "finish-order-reverse-forest",
+          "text": "Run a full DFS forest on the original graph, recording vertices on completion. Reverse every edge. In decreasing completion order, start a traversal from each not-yet-grouped vertex in the reversed graph, assigning a new group to that whole traversal.",
+          "grade": "correct",
+          "feedback": "Decreasing completion order selects an unassigned group that cannot reach another still-unassigned group in the reversed graph. Reversing edges preserves mutual reachability, so that traversal collects exactly one maximal group rather than merging distinct groups."
+        },
+        {
+          "optionId": "B",
+          "approachId": "undirected-components",
+          "text": "Ignore edge directions and label the connected components of the resulting undirected graph.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[]], this merges 0 and 1, although 1 cannot reach 0. Undirected connectivity is weaker than mutual directed reachability."
+        },
+        {
+          "optionId": "C",
+          "approachId": "original-dfs-trees",
+          "text": "Run a DFS forest on the original outgoing lists and give every vertex in one DFS tree the same group.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[]], DFS from 0 reaches 1 and groups them together. A DFS tree proves only forward reachability from its root, not return routes."
+        },
+        {
+          "optionId": "D",
+          "approachId": "pairwise-reachability",
+          "text": "Run a fresh reachability traversal from each vertex, retain all results, then group vertices that reach each other.",
+          "grade": "partial",
+          "feedback": "Mutual reachability is exactly the equivalence relation requested, so this is correct for all inputs. But repeated searches and the full reachability table add removable work and storage; two ordered traversal passes suffice."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Mutual reachability is stronger than belonging to a single discovery tree. Completion order and edge reversal allow an entire group to be extracted without testing every pair.",
+      "details": [
+        "Run an iterative DFS forest with frames (vertex,nextNeighborIndex), marking on frame creation and appending each vertex to a completion list only when its frame finishes. Build reversed adjacency in compact offset and edge arrays with two edge scans. Initialize group entries to unassigned. Iterate completion entries backward. At each unassigned vertex, traverse reversed edges with an explicit stack, assigning the same new group ID when pushing each discovered vertex. Return group.",
+        "Finish order in the first DFS, not discovery order, determines roots in the reversed pass. Reversed traversal in descending finish order isolates strongly connected groups. The explicitly built transpose remains auxiliary edge storage.",
+        "“Run a full DFS forest on the original graph, recording vertices on completion. Reverse every edge. In decreasing completion order, start a traversal from each not-yet-grouped vertex in the reversed graph, assigning a new group to that whole traversal.”: Decreasing completion order selects an unassigned group that cannot reach another still-unassigned group in the reversed graph. Reversing edges preserves mutual reachability, so that traversal collects exactly one maximal group rather than merging distinct groups.",
+        "“Ignore edge directions and label the connected components of the resulting undirected graph.”: For lists=[[1],[]], this merges 0 and 1, although 1 cannot reach 0. Undirected connectivity is weaker than mutual directed reachability.",
+        "“Run a DFS forest on the original outgoing lists and give every vertex in one DFS tree the same group.”: For lists=[[1],[]], DFS from 0 reaches 1 and groups them together. A DFS tree proves only forward reachability from its root, not return routes.",
+        "“Run a fresh reachability traversal from each vertex, retain all results, then group vertices that reach each other.”: Mutual reachability is exactly the equivalence relation requested, so this is correct for all inputs. But repeated searches and the full reachability table add removable work and storage; two ordered traversal passes suffice."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-20-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "hard",
+    "prompt": "Analyze finish-order-reverse-forest. V counts vertices and E directed edges. Use preallocated V-entry frame/stack, visited, completion and construction scratch arrays, plus a compact reversed representation with V+1 offsets and E edge entries. Initialize all arrays and count reversed-graph construction. Array/index/stack operations take constant time. No hashing, recursion, shifting, amortized growth, or slices of input lists. Exclude the original graph and returned group array; include reversed graph and every other working array.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V²) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Two graph traversals and reversal process vertices/edges a constant number of times.",
+      "details": [
+        "The option “O(V + E) time, O(V + E) auxiliary space” is tight: the first DFS, reversal and second traversal each process V vertices and E edges a constant number of times. The reversed graph alone requires O(V+E) auxiliary storage; frames, marks, completion order and scratch arrays add O(V). The option “O(V + E) time, O(V) auxiliary space” omits reversed edge storage. The option “O(V(V + E)) time, O(V²) auxiliary space” describes the pairwise-reachability table method. The option “O(V + E) time, O(1) auxiliary space” omits both the graph copy and traversal state, which remain auxiliary after excluding only the returned group array.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V + E)."
+      ]
+    }
+  },
+  "analyzedApproachId": "finish-order-reverse-forest",
+  "methodReveal": {
+    "title": "Two passes with completion order",
+    "description": "Run an iterative DFS forest with frames (vertex,nextNeighborIndex), marking on frame creation and appending each vertex to a completion list only when its frame finishes. Build reversed adjacency in compact offset and edge arrays with two edge scans. Initialize group entries to unassigned. Iterate completion entries backward. At each unassigned vertex, traverse reversed edges with an explicit stack, assigning the same new group ID when pushing each discovered vertex. Return group."
+  }
+}

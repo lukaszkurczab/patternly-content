@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-09",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "copy-cost-of-growing-immutable-results",
+    "difficulty": "medium",
+    "questionId": "acm-b01-09-q1",
+    "prompt": "Packing captions. Given a read-only array parts of n strings, return one string containing their characters in the original array order with no separators. Empty strings are allowed. Let L be the total number of characters. There are 1 <= n <= 100,000 strings and 0 <= L <= 200,000 characters; each character is a fixed-size code unit. String lengths are stored and readable directly. Return an owning flat string, not a rope, view, or list of chunks. Choose minimum worst-case total time, breaking equal-time ties by smaller auxiliary storage.\n\nExample 1: Input: parts=[\"ab\",\"\",\"C\",\"de\"]. Output: \"abCde\".\nExample 2: Input: parts=[\"\",\"\"]. Output: \"\".\n\nThe output API can allocate a flat result with a chosen length, initialize it, fill its character positions, and seal that same allocation as the returned string without copying. Allocating/initializing k characters and copying k characters each take work proportional to k. Concatenating two immutable strings creates a new flat string and copies both operands. Inputs cannot be modified.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "size-once-fill-output",
+          "text": "Sum the stored string lengths, allocate the result at that exact length, then copy each part directly into its successive positions and seal it.",
+          "grade": "correct",
+          "feedback": "The total length determines the single output allocation. Each character is copied into its final position, and empty parts preserve order without contributing characters."
+        },
+        {
+          "optionId": "B",
+          "approachId": "temporary-character-array",
+          "text": "Sum the lengths, allocate a separate character array of that length, fill it with all parts, then allocate and copy it into the returned flat string.",
+          "grade": "partial",
+          "feedback": "This works for every input and has optimal total growth in running time, but the temporary full array is avoidable with the supplied output API."
+        },
+        {
+          "optionId": "C",
+          "approachId": "immutable-left-fold",
+          "text": "Start with an empty immutable string and repeatedly replace it with the concatenation of the accumulated string and the next part.",
+          "grade": "incorrect",
+          "feedback": "The content is correct, but each concatenation recopies the accumulated prefix. For n one-character parts, it copies prefixes of lengths 1,2,...,n instead of writing each character directly to its final slot."
+        },
+        {
+          "optionId": "D",
+          "approachId": "sort-captions-first",
+          "text": "Sort the parts lexicographically, then concatenate them in that order.",
+          "grade": "incorrect",
+          "feedback": "Sorting changes the required order. For parts=[\"z\",\"a\"], it returns \"az\" rather than \"za\"."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Include the cost of copying growing values and distinguish required output storage from temporary copies.",
+      "details": [
+        "Read all stored lengths to obtain L. Allocate the flat output for L characters. Traverse parts in order and copy each character to the next output slot, keeping a write offset. Seal this same allocation as the result. No separate character collection or accumulated immutable prefix is created.",
+        "Empty parts contribute no characters but still have stored lengths to inspect. Writing directly into the final allocation avoids repeatedly copying an ever-longer immutable prefix. This constant-helper-space result depends on sealing the same allocation; converting a separate buffer by copying would count that buffer as auxiliary.",
+        "“Sum the stored string lengths, allocate the result at that exact length, then copy each part directly into its successive positions and seal it.”: The total length determines the single output allocation. Each character is copied into its final position, and empty parts preserve order without contributing characters.",
+        "“Sum the lengths, allocate a separate character array of that length, fill it with all parts, then allocate and copy it into the returned flat string.”: This works for every input and has optimal total growth in running time, but the temporary full array is avoidable with the supplied output API.",
+        "“Start with an empty immutable string and repeatedly replace it with the concatenation of the accumulated string and the next part.”: The content is correct, but each concatenation recopies the accumulated prefix. For n one-character parts, it copies prefixes of lengths 1,2,...,n instead of writing each character directly to its final slot.",
+        "“Sort the parts lexicographically, then concatenate them in that order.”: Sorting changes the required order. For parts=[\"z\",\"a\"], it returns \"az\" rather than \"za\"."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "copy-cost-of-growing-immutable-results",
+    "difficulty": "medium",
+    "questionId": "acm-b01-09-q2",
+    "prompt": "For size-once-fill-output, what are worst-case time and peak auxiliary space in terms of the number n of parts and total character count L? Count length reads, output allocation/initialization, and character copies. The allocation returned after sealing is required output throughout construction and is excluded from auxiliary space.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "parts-plus-text",
+          "text": "O(n + L) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "text-only",
+          "text": "O(L + 1) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "linear-work-linear-space",
+          "text": "O(n + L) time, O(L + 1) auxiliary space"
+        },
+        {
+          "optionId": "recopy",
+          "text": "O(n(L + 1)) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "parts-plus-text"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Inspect n part headers and write L characters directly into returned storage.",
+      "details": [
+        "Reading lengths and visiting parts cost O(n), even for empty strings. Initialization and copying cost O(L), giving O(n + L). Only lengths, offsets, and loop counters remain outside the required result; the input is never copied and no recursion is used. Repeated immutable concatenation has extra prefix-copy work, but the analyzed method writes directly into the final allocation.",
+        "Time: O(n + L).",
+        "Auxiliary space: O(1).",
+        "“O(L + 1) time, O(1) auxiliary space”: Empty parts still require length reads and traversal. With L=0, n can still be large.",
+        "“O(n + L) time, O(L + 1) auxiliary space”: The L-character allocation is the required result, explicitly excluded. No second character buffer exists.",
+        "“O(n(L + 1)) time, O(1) auxiliary space”: This loose upper bound includes repeated accumulated-prefix copying, which this method avoids; n+L is tighter."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "text-only",
+          "text": "Empty parts still require length reads and traversal. With L=0, n can still be large."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "linear-work-linear-space",
+          "text": "The L-character allocation is the required result, explicitly excluded. No second character buffer exists."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "recopy",
+          "text": "This loose upper bound includes repeated accumulated-prefix copying, which this method avoids; n+L is tighter."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "size-once-fill-output",
+  "methodReveal": {
+    "title": "Write into one final allocation",
+    "description": "Read all stored lengths to obtain L. Allocate the flat output for L characters. Traverse parts in order and copy each character to the next output slot, keeping a write offset. Seal this same allocation as the result. No separate character collection or accumulated immutable prefix is created."
+  }
+}

@@ -27,7 +27,7 @@ import {
 import { PlanningPolicyError, validatePlanningPolicy } from "./content/planning-policy.mjs";
 import { validateApproachChallengeFamily, validateApproachChallengeProblem } from "./content/approach-challenge-contract.mjs";
 import { validateApproachChallengeBlueprint } from "./content/approach-challenge-blueprint.mjs";
-import { loadApproachChallengeBank } from "./content/approach-challenge-bank.mjs";
+import { APPROACH_CHALLENGE_EXPECTED_PROBLEM_COUNT, loadApproachChallengeBank } from "./content/approach-challenge-bank.mjs";
 import { TRACK_RUNTIME_BINDINGS_FILE, getTrackRuntimeBinding, loadTrackProfileData, loadTrackRuntimeBindings, resolveTrackProfileLoaderRegistration, validateTrackRuntimeBindings } from "./content/track-runtime-bindings.mjs";
 
 export const ARTIFACT_SCHEMA_VERSION = "patternly-content-artifact-v2";
@@ -868,8 +868,8 @@ function validateArtifactShape(artifact, { entry, catalog, filePath, matchesCurr
     fail(`Artifact questionCount mismatch: ${filePath}`);
   }
   if (Object.hasOwn(artifact, "approachChallengeProblems")) {
-    if (entry.trackId !== "coding-interview-dsa-problem-solving" || !Array.isArray(artifact.approachChallengeProblems) || artifact.approachChallengeProblems.length !== 36) {
-      fail(`Artifact approachChallengeProblems must contain exactly 36 Coding Interview problem pairs: ${filePath}`);
+    if (entry.trackId !== "coding-interview-dsa-problem-solving" || !Array.isArray(artifact.approachChallengeProblems) || artifact.approachChallengeProblems.length !== APPROACH_CHALLENGE_EXPECTED_PROBLEM_COUNT) {
+      fail(`Artifact approachChallengeProblems must contain exactly ${APPROACH_CHALLENGE_EXPECTED_PROBLEM_COUNT} Coding Interview problem pairs: ${filePath}`);
     }
     const problemIds = new Set();
     const questionIds = new Set(artifact.questions.map((question) => question.questionId));

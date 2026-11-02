@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b16-22",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "recursion_basics",
+  "requiredFamilyIds": [
+    "recursion_basics"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "recursion_basics",
+    "mentalUnitId": "recursion_stack_and_complexity",
+    "difficulty": "medium",
+    "questionId": "acm-b16-22-q1",
+    "prompt": "A device protocol P is defined as follows: P(0) emits X once. For k>0, P(k) performs P(k-1), emits Y once, then performs P(k-1) again. Send exactly the event sequence P(d) to an append-only sink. Examples: d=0 emits X; d=1 emits XYX; d=2 emits XYXYXYX. Every event occurrence must be sent, even if it repeats an earlier segment.",
+    "constraints": [
+      "0 ≤ d ≤ 25. Each sink.emit(character) call takes constant time and must represent exactly one event; bulk writes or compressed commands are not supported.",
+      "The sink stores its own history outside the algorithm and cannot be read back. Calls may not be omitted or reordered.",
+      "Ordinary calls retain their frames until return; there is no tail-call elimination. Do not count sink-owned event history as auxiliary storage."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "method-3",
+          "approachId": "method-3",
+          "text": "Build the full event sequence in a private character array, then emit each stored character once.",
+          "grade": "partial",
+          "feedback": "This sends the correct events but retains a removable full copy of the sequence before sending."
+        },
+        {
+          "optionId": "method-4",
+          "approachId": "method-4",
+          "text": "Memoize whether P(k) has already run and skip it on later calls with the same k.",
+          "grade": "incorrect",
+          "feedback": "For d=1, the second P(0) must emit another X; skipping it produces XY instead of XYX."
+        },
+        {
+          "optionId": "method-1",
+          "approachId": "method-1",
+          "text": "Implement P directly: at zero emit X, otherwise call P(k-1), emit Y, and call P(k-1) a second time.",
+          "grade": "correct",
+          "feedback": "Both child occurrences are observable protocol actions, so both must execute in order."
+        },
+        {
+          "optionId": "method-2",
+          "approachId": "method-2",
+          "text": "Use explicit frames storing k and which of the first child, Y event, or second child is next; process one frame stage at a time.",
+          "grade": "correct",
+          "feedback": "The staged frame stack preserves every occurrence and has the same peak depth and total emitted work as recursive execution."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The two identical-looking child calls emit separate required event sequences and cannot be merged by caching.",
+      "details": [
+        "Call P(d). P(0) emits X and returns. For positive k, execute P(k-1), emit Y, execute P(k-1) again, then return. There is no cache or private event array; the two recursive calls run sequentially.",
+        "The two identical-looking child calls emit separate required event sequences and cannot be merged by caching. They execute sequentially, so exponential output work coexists with only d+1 active frames.",
+        "“Build the full event sequence in a private character array, then emit each stored character once.”: This sends the correct events but retains a removable full copy of the sequence before sending.",
+        "“Memoize whether P(k) has already run and skip it on later calls with the same k.”: For d=1, the second P(0) must emit another X; skipping it produces XY instead of XYX.",
+        "“Implement P directly: at zero emit X, otherwise call P(k-1), emit Y, and call P(k-1) a second time.”: Both child occurrences are observable protocol actions, so both must execute in order.",
+        "“Use explicit frames storing k and which of the first child, Y event, or second child is next; process one frame stage at a time.”: The staged frame stack preserves every occurrence and has the same peak depth and total emitted work as recursive execution."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "recursion_basics",
+    "mentalUnitId": "recursion_stack_and_complexity",
+    "difficulty": "medium",
+    "questionId": "acm-b16-22-q2",
+    "prompt": "Analyze method-1 as described in the revealed method. Let d be the input level. Analyze recursive method-1. Each event emission and local operation costs constant time. Count call frames; exclude the sink and its event history. No tail-call elimination, copying, or hashing is performed. Choose the tightest worst-case time and auxiliary-space pair among the options.",
+    "constraints": [],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "cost-2",
+          "text": "O(2^d) time, O(2^d) auxiliary space"
+        },
+        {
+          "optionId": "cost-3",
+          "text": "O(d + 1) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "cost-0",
+          "text": "O(2^d) time, O(d + 1) auxiliary space"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(d + 1) time, O(d + 1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "cost-0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Required events grow exponentially while simultaneous call depth grows linearly.",
+      "details": [
+        "The event count satisfies E(0)=1 and E(d)=2E(d-1)+1, giving 2^(d+1)-1 events. Only one child call chain is active at a time, with d+1 frames.",
+        "Time: O(2^d).",
+        "Auxiliary space: O(d + 1).",
+        "“O(d + 1) time, O(d + 1) auxiliary space”: Depth bounds simultaneous calls, but both child occurrences must run and emit their events.",
+        "“O(2^d) time, O(2^d) auxiliary space”: The sink owns the event history; recursive frames from the first child are released before executing the second child.",
+        "“O(d + 1) time, O(1) auxiliary space”: This omits both the repeated observable emissions and the active recursive call chain."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-1",
+          "text": "Depth bounds simultaneous calls, but both child occurrences must run and emit their events."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-2",
+          "text": "The sink owns the event history; recursive frames from the first child are released before executing the second child."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-3",
+          "text": "This omits both the repeated observable emissions and the active recursive call chain."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "method-1",
+  "methodReveal": {
+    "title": "Method to analyze",
+    "description": "Call P(d). P(0) emits X and returns. For positive k, execute P(k-1), emit Y, execute P(k-1) again, then return. There is no cache or private event array; the two recursive calls run sequentially."
+  }
+}

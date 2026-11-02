@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-12",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "bounded-domain-initialization-and-state",
+    "difficulty": "medium",
+    "questionId": "acm-b01-12-q1",
+    "prompt": "Badge counter. Consume a forward-only stream of n events: award(id) increments that badge's count, and ask(id) adds its current count to a checksum. IDs are integers in [0,U-1]. Return the checksum, initially zero. Counts initially are zero. Given U and n before processing, 1 <= U <= n <= 200,000. Counts and checksum fit signed 64-bit words. Events cannot be revisited or inspected ahead. Use minimum deterministic worst-case total time, then minimum asymptotic peak auxiliary storage among such methods. Ordinary flat storage is available; allocating and zeroing U counters costs work proportional to U; indexed reads and increments cost constant time. The output is just the checksum.\n\nExample 1: Input: U=3, events=[award(2),ask(0),award(2),ask(2)]. Output: 2.\nExample 2: Input: U=1, events=[ask(0)]. Output: 0.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "direct-badge-counters",
+          "text": "Create a zeroed counter array of length U. Increment counts[id] for an award and add counts[id] to the checksum for an ask.",
+          "grade": "correct",
+          "feedback": "The bounded ID domain gives every badge its own directly addressable counter. Future questions may refer to any earlier badge."
+        },
+        {
+          "optionId": "B",
+          "approachId": "retain-award-history",
+          "text": "Keep every awarded ID; for each ask, scan that history and count matches.",
+          "grade": "incorrect",
+          "feedback": "It is correct, but repeated asks after a long history repeat the same comparisons. Direct counters already retain the needed summary."
+        },
+        {
+          "optionId": "C",
+          "approachId": "zero-all-on-question",
+          "text": "Keep counters but zero the entire counter array immediately before each ask.",
+          "grade": "incorrect",
+          "feedback": "Awards remain in force. With U=1 and [award(0),ask(0)], clearing makes the checksum 0 instead of 1."
+        },
+        {
+          "optionId": "D",
+          "approachId": "one-global-counter",
+          "text": "Increment one total for every award and use that total for every ask.",
+          "grade": "incorrect",
+          "feedback": "Counts belong to particular badges. With U=2 and [award(0),ask(1)], this returns 1 instead of 0."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A small known key domain can be represented by direct counters; include the cost of preparing the whole domain.",
+      "details": [
+        "Allocate and zero U counters once. Process each event in order, updating or reading its indexed counter and maintaining a checksum. Keep the counters until all events are consumed.",
+        "A never-awarded badge must read as zero, which explains initialization of all U counters. Repeated awards update one indexed counter without searching previous events. Direct addressing is justified by the bounded ID universe; arbitrary unbounded keys would need a different structure and cost model.",
+        "“Create a zeroed counter array of length U. Increment counts[id] for an award and add counts[id] to the checksum for an ask.”: The bounded ID domain gives every badge its own directly addressable counter. Future questions may refer to any earlier badge.",
+        "“Keep every awarded ID; for each ask, scan that history and count matches.”: It is correct, but repeated asks after a long history repeat the same comparisons. Direct counters already retain the needed summary.",
+        "“Keep counters but zero the entire counter array immediately before each ask.”: Awards remain in force. With U=1 and [award(0),ask(0)], clearing makes the checksum 0 instead of 1.",
+        "“Increment one total for every award and use that total for every ask.”: Counts belong to particular badges. With U=2 and [award(0),ask(1)], this returns 1 instead of 0."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "bounded-domain-initialization-and-state",
+    "difficulty": "medium",
+    "questionId": "acm-b01-12-q2",
+    "prompt": "Analyze direct-badge-counters in terms of n events and U possible IDs, where U <= n. Which pair includes initialization and the full stream? Counters are auxiliary, not output. No hashing, recursion, or input history is used.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "counters",
+          "text": "O(n + U) time, O(U) auxiliary space"
+        },
+        {
+          "optionId": "history",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "no-domain-space",
+          "text": "O(n + U) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "per-event-reset",
+          "text": "O(nU) time, O(U) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "counters"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Initialize U counters, then process n constant-cost events.",
+      "details": [
+        "Zeroing costs O(U), then each of n events does constant work, so O(n+U) is the tight total, equivalently O(n) under U<=n. The U independent counters stay live throughout. The checksum and current event require constant space. This is deterministic indexed access, not an expected hash-table claim.",
+        "Time: O(n + U).",
+        "Auxiliary space: O(U).",
+        "“O(n²) time, O(n) auxiliary space”: This describes rescanning stored awards rather than updating direct counters.",
+        "“O(n + U) time, O(1) auxiliary space”: The U stored counters are auxiliary and cannot be excluded with the scalar output.",
+        "“O(nU) time, O(U) auxiliary space”: The method zeroes the counters once, not on every event; this bound is loose when both n and U grow."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "history",
+          "text": "This describes rescanning stored awards rather than updating direct counters."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "no-domain-space",
+          "text": "The U stored counters are auxiliary and cannot be excluded with the scalar output."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "per-event-reset",
+          "text": "The method zeroes the counters once, not on every event; this bound is loose when both n and U grow."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "direct-badge-counters",
+  "methodReveal": {
+    "title": "One counter per badge",
+    "description": "Allocate and zero U counters once. Process each event in order, updating or reading its indexed counter and maintaining a checksum. Keep the counters until all events are consumed."
+  }
+}

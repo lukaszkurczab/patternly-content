@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b09-05",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "binary_search",
+  "requiredFamilyIds": [
+    "binary_search"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "binary_search",
+    "mentalUnitId": "missing-rank-from-index-gap",
+    "difficulty": "medium",
+    "questionId": "acm-b09-05-q1",
+    "prompt": "An unissued serial\n\nThe read-only random-access array `issued` lists distinct positive integers in strictly increasing order. In the infinite sequence 1,2,3,..., remove every listed integer. Return the kth remaining integer, counting from one.\n\nConstraints: 1 <= n <= 200000; 1 <= issued[i] <= 10^9; 1 <= k <= 10^9. Use signed 64-bit arithmetic. Prefer a method whose worst-case work grows least with n and the numeric values, then least working memory.\n\nExamples: issued=[2,3,7,11], k=5 -> 8 (the first five remaining values are 1,4,5,6,8); issued=[1,2,3], k=2 -> 5; issued=[6], k=2 -> 2.",
+    "constraints": [
+      "The requested value can lie before the first listed integer or after the last.",
+      "The array contains only issued integers, not every integer up to its maximum."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "gap-boundary",
+          "approachId": "gap-boundary",
+          "text": "Find the first index i with issued[i]-(i+1)>=k by iterative lower-bound search, using n as the absent-boundary sentinel. Return k+i.",
+          "grade": "correct",
+          "feedback": "At index i, issued[i]-(i+1) counts missing positive integers through issued[i]. These counts never decrease. The first boundary says exactly i listed values precede the answer, including i=n when it lies beyond all entries."
+        },
+        {
+          "optionId": "gap-copy",
+          "approachId": "gap-copy",
+          "text": "Find the same boundary recursively by copying the retained half at each step, carrying its original index offset, then return k plus that original boundary index.",
+          "grade": "partial",
+          "feedback": "Original offsets keep the missing-count calculation correct, but copied slices and recursive frames add avoidable work and space. Search the supplied array with indices instead."
+        },
+        {
+          "optionId": "enumerate-values",
+          "approachId": "enumerate-values",
+          "text": "Starting at 1, enumerate integers and advance a pointer through issued, counting unlisted values until k are found.",
+          "grade": "incorrect",
+          "feedback": "This is correct but can enumerate a billion or more integers despite a tiny input. It ignores the rank calculation available from a probe."
+        },
+        {
+          "optionId": "offset-last",
+          "approachId": "offset-last",
+          "text": "Return issued[n-1]+k.",
+          "grade": "incorrect",
+          "feedback": "This assumes every earlier positive integer was issued. For issued=[6], k=2 the result should be 2, whereas this returns 8."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "At index i subtract i+1 from the issued value to count missing positives through that point. Search for the first count reaching k. If its index is i, exactly i issued integers shift the kth missing value, so return k+i. If no count reaches k, use i=n.",
+      "details": [
+        "At index i subtract i+1 from the issued value to count missing positives through that point. Search for the first count reaching k. If its index is i, exactly i issued integers shift the kth missing value, so return k+i. If no count reaches k, use i=n.",
+        "At index i, issued[i]-(i+1) counts missing positive integers through that value. The first count reaching k determines how many issued values shift the answer. If none does, the kth missing value lies after the final issuance.",
+        "“Find the first index i with issued[i]-(i+1)>=k by iterative lower-bound search, using n as the absent-boundary sentinel. Return k+i.”: At index i, issued[i]-(i+1) counts missing positive integers through issued[i]. These counts never decrease. The first boundary says exactly i listed values precede the answer, including i=n when it lies beyond all entries.",
+        "“Find the same boundary recursively by copying the retained half at each step, carrying its original index offset, then return k plus that original boundary index.”: Original offsets keep the missing-count calculation correct, but copied slices and recursive frames add avoidable work and space. Search the supplied array with indices instead.",
+        "“Starting at 1, enumerate integers and advance a pointer through issued, counting unlisted values until k are found.”: This is correct but can enumerate a billion or more integers despite a tiny input. It ignores the rank calculation available from a probe.",
+        "“Return issued[n-1]+k.”: This assumes every earlier positive integer was issued. For issued=[6], k=2 the result should be 2, whereas this returns 8."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "binary_search",
+    "mentalUnitId": "missing-rank-from-index-gap",
+    "difficulty": "medium",
+    "questionId": "acm-b09-05-q2",
+    "prompt": "Analyze only gap-boundary: an iterative lower-bound search computing issued[mid]-(mid+1) directly, followed by returning k+lo. Let n be the array length. Signed 64-bit arithmetic and random access are constant time. No arrays are copied and no recursion or hashing is used. Choose the tightest pair.",
+    "constraints": [
+      "Use worst-case bounds. Count all working memory including any stack; exclude supplied inputs and the scalar result."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "c0",
+          "text": "O(log(n + 1)) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "c1",
+          "text": "O(log(n + 1)) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "c2",
+          "text": "O(n + k) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "c3",
+          "text": "O(1) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "c0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Compute missing rank per midpoint and halve the index search interval.",
+      "details": [
+        "The missing count at a midpoint is one subtraction, so each halving costs constant time. Searching n indices takes O(log(n+1)) time; computing k+i afterward is constant. No array proportional to k or n is allocated.",
+        "“O(log(n + 1)) time, O(1) auxiliary space”: Missing counts are computed at probes, with scalar search bounds.",
+        "“O(log(n + 1)) time, O(n) auxiliary space”: Missing-rank computation uses the probed value and index directly; no n-entry missing-value table is built.",
+        "“O(n + k) time, O(1) auxiliary space”: Search is over issued indices, not every positive integer through the missing answer.",
+        "“O(1) time, O(1) auxiliary space”: The first missing-rank threshold may require logarithmically many index probes."
+      ]
+    }
+  },
+  "analyzedApproachId": "gap-boundary",
+  "methodReveal": {
+    "title": "Search the missing-count boundary",
+    "description": "At index i subtract i+1 from the issued value to count missing positives through that point. Search for the first count reaching k. If its index is i, exactly i issued integers shift the kth missing value, so return k+i. If no count reaches k, use i=n."
+  }
+}

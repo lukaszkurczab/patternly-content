@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-17",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b12-17-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "topological_order_intro",
+    "difficulty": "hard",
+    "prompt": "Is the preparation order forced? A directed dependency graph is promised acyclic. Every vertex is a distinct job, and u->v means u must precede v. Return true exactly when there is only one valid ordering of all V jobs; return false when there are at least two. Disconnected jobs must also appear in the ordering.\n\nInput: read-only outgoing adjacency lists, IDs 0..V-1; 1 <= V <= 200000, 0 <= E <= 400000, no duplicates or self-loops. The acyclic promise is reliable; no order needs to be returned.\n\nExample 1: lists=[[1],[2],[]], output=true.\nExample 2: lists=[[2],[2],[]], output=false: either 0 or 1 can be first.\nExample 3: lists=[[],[]], output=false.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "unique-available-job",
+          "text": "Use indegree elimination. Before each removal, require exactly one currently zero-indegree remaining job. If two or more are available, return false; otherwise remove the sole job and update neighbors. Return true after all jobs are removed.",
+          "grade": "correct",
+          "feedback": "Two available jobs have no unfinished prerequisite ordering them relative to each other, so either can be next and both choices extend to complete orders in a DAG. A sole choice at every step forces the entire sequence."
+        },
+        {
+          "optionId": "B",
+          "approachId": "acyclic-means-unique",
+          "text": "Return true because the graph is acyclic.",
+          "grade": "incorrect",
+          "feedback": "Acyclicity guarantees existence, not uniqueness. Example 3 has two isolated jobs and both [0,1] and [1,0] are valid."
+        },
+        {
+          "optionId": "C",
+          "approachId": "one-initial-source",
+          "text": "Return true exactly when the original graph has one zero-indegree vertex, without checking later steps.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1,2],[],[]], only 0 is initially available, but after 0 both 1 and 2 are available. The orders [0,1,2] and [0,2,1] differ."
+        },
+        {
+          "optionId": "D",
+          "approachId": "enumerate-orders",
+          "text": "Enumerate all topological orders by branching on available jobs and count them, returning true only if the final count is one.",
+          "grade": "incorrect",
+          "feedback": "This is logically correct if the count is kept exactly, but can enumerate factorially many orders for isolated jobs. A pair of simultaneous choices already proves nonuniqueness, so complete enumeration is explicitly unnecessary inefficiency."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Uniqueness is a property of every available frontier during dependency removal, not merely the first choice or the absence of cycles.",
+      "details": [
+        "Build indegrees and queue all zero-indegree jobs. Before each removal, compare tail-head, the number of queued jobs. If it exceeds one, return false. Otherwise remove the only job and decrement all outgoing neighbor indegrees, adding newly zero neighbors. The DAG promise ensures a nonempty remaining graph always has an available job. Return true after V removals.",
+        "Two available zero-indegree jobs can be swapped, producing two valid orders. Exactly one choice at every step forces the order under the DAG promise. Queue length is read directly, not rescanned.",
+        "“Use indegree elimination. Before each removal, require exactly one currently zero-indegree remaining job. If two or more are available, return false; otherwise remove the sole job and update neighbors. Return true after all jobs are removed.”: Two available jobs have no unfinished prerequisite ordering them relative to each other, so either can be next and both choices extend to complete orders in a DAG. A sole choice at every step forces the entire sequence.",
+        "“Return true because the graph is acyclic.”: Acyclicity guarantees existence, not uniqueness. Example 3 has two isolated jobs and both [0,1] and [1,0] are valid.",
+        "“Return true exactly when the original graph has one zero-indegree vertex, without checking later steps.”: For lists=[[1,2],[],[]], only 0 is initially available, but after 0 both 1 and 2 are available. The orders [0,1,2] and [0,2,1] differ.",
+        "“Enumerate all topological orders by branching on available jobs and count them, returning true only if the final count is one.”: This is logically correct if the count is kept exactly, but can enumerate factorially many orders for isolated jobs. A pair of simultaneous choices already proves nonuniqueness, so complete enumeration is explicitly unnecessary inefficiency."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-17-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "topological_order_intro",
+    "difficulty": "hard",
+    "prompt": "Analyze unique-available-job. V counts jobs and E dependencies. Initialize V indegrees and scan all edges before elimination. Use a preallocated V-slot queue with head/tail indices and constant-time indexing, arithmetic and queue operations. No order is returned: output is a scalar boolean. Exclude input and scalar output; include indegrees and queue. No hashing, recursion, copying, shifting or amortized growth. Consider a DAG with a unique order so the loop does not return early.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Indegree construction and one elimination pass account for all work.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: indegree initialization/build costs O(V+E), each job is removed once, and every edge is decremented once. Indegrees and queue require O(V) auxiliary storage. The option “O(V + E) time, O(1) auxiliary space” omits them. The option “O(V(V + E)) time, O(V) auxiliary space” incorrectly repeats the graph traversal per choice. The option “O(V + E) time, O(V + E) auxiliary space” counts edge storage that remains part of the read-only input. Checking queue length is constant time and does not scan the frontier.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "unique-available-job",
+  "methodReveal": {
+    "title": "Check the size of every available frontier",
+    "description": "Build indegrees and queue all zero-indegree jobs. Before each removal, compare tail-head, the number of queued jobs. If it exceeds one, return false. Otherwise remove the only job and decrement all outgoing neighbor indegrees, adding newly zero neighbors. The DAG promise ensures a nonempty remaining graph always has an available job. Return true after V removals."
+  }
+}

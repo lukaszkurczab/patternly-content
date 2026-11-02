@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-12",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-12-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_bfs",
+    "difficulty": "medium",
+    "prompt": "Within the broadcast limit. In a directed unweighted graph, a source s broadcasts to all vertices reachable using at most h edges. Return how many distinct vertices receive the broadcast, including s. h is a nonnegative integer. Cycles must not cause repeat counting.\n\nInput: read-only outgoing adjacency lists, IDs 0..V-1, 1 <= V <= 200000, 0 <= E <= 400000, 0 <= h <= V. No duplicate edges or self-loops. A vertex first reached along a longer route may also have a shorter route.\n\nExample: lists=[[1,3],[2],[3],[]], s=0,h=1, output=3 (0,1,3).\nWith the same lists and h=0, output=1.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "bounded-bfs",
+          "text": "Use BFS from s with first-discovery distances. Count each new vertex once, and do not inspect outgoing neighbors of a vertex whose distance equals h.",
+          "grade": "correct",
+          "feedback": "BFS first reaches each vertex with its minimum edge count. A vertex at the limit cannot lead to a new receiver within the limit, so its outgoing list can safely be skipped."
+        },
+        {
+          "optionId": "B",
+          "approachId": "depth-limited-dfs-global-visited",
+          "text": "Use depth-limited DFS with one global visited bit per vertex. Mark on first visit and never revisit, even if a later route has smaller depth.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1,3],[2],[3],[4],[]], s=0,h=3, DFS may first reach 3 through 0-1-2-3 and stop expanding it. The shorter route 0-3 should then allow 4, but the global mark suppresses that exploration."
+        },
+        {
+          "optionId": "C",
+          "approachId": "full-bfs-then-filter",
+          "text": "Run BFS to completion on the entire reachable graph, then count vertices whose distances are at most h.",
+          "grade": "partial",
+          "feedback": "All distances are correct, so filtering returns the right count. But the graph beyond the broadcast limit need not be explored; skipping expansion at the limit removes that work when h is small."
+        },
+        {
+          "optionId": "D",
+          "approachId": "count-walks",
+          "text": "Generate all directed walks of length at most h from s and return the number of generated walks, including the zero-edge walk.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1,2],[3],[3],[]], s=0,h=2, there are five walks including the empty one, but only four receivers. Multiple routes to one vertex must not increase the count."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The distance layer controls safe pruning. A global discovery marker is safe for this cutoff only when first discovery is already at minimum distance.",
+      "details": [
+        "Initialize V distance entries to -1. Set distance[s]=0, count=1 and enqueue s. For each removed u, skip its outgoing list when distance[u]=h. Otherwise inspect neighbors, assigning unseen vertices distance[u]+1, increasing count and enqueueing them. Return count after the queue empties.",
+        "Do not scan outgoing edges of vertices already at distance h: they cannot discover any additional eligible vertex. Count the source at distance zero. Full distance initialization still touches all vertices even for h=0.",
+        "“Use BFS from s with first-discovery distances. Count each new vertex once, and do not inspect outgoing neighbors of a vertex whose distance equals h.”: BFS first reaches each vertex with its minimum edge count. A vertex at the limit cannot lead to a new receiver within the limit, so its outgoing list can safely be skipped.",
+        "“Use depth-limited DFS with one global visited bit per vertex. Mark on first visit and never revisit, even if a later route has smaller depth.”: For lists=[[1,3],[2],[3],[4],[]], s=0,h=3, DFS may first reach 3 through 0-1-2-3 and stop expanding it. The shorter route 0-3 should then allow 4, but the global mark suppresses that exploration.",
+        "“Run BFS to completion on the entire reachable graph, then count vertices whose distances are at most h.”: All distances are correct, so filtering returns the right count. But the graph beyond the broadcast limit need not be explored; skipping expansion at the limit removes that work when h is small.",
+        "“Generate all directed walks of length at most h from s and return the number of generated walks, including the zero-edge walk.”: For lists=[[1,2],[3],[3],[]], s=0,h=2, there are five walks including the empty one, but only four receivers. Multiple routes to one vertex must not increase the count."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-12-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_bfs",
+    "difficulty": "medium",
+    "prompt": "Analyze bounded-bfs. V is the total vertex count and E the directed edge count (or undirected edges stored twice where specified). Use preallocated indexed arrays and a V-slot frontier, with constant-time indexing and head/tail queue or stack operations. Include array initialization and all explicitly described scans. No hashing, recursion, array shifting, amortized growth, or input-list copying is used. Exclude the read-only input and returned result; include all other storage. Choose the tightest worst-case pair. h is part of the input and can equal V. Reserve V queue slots and initialize all V distances even when h=0. The requested bound is worst case over legal h and graphs, not a claim that every small-h run scans all E edges.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Initialize vertex state, then explore only layers permitted by the hop limit.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight over legal inputs: h may permit the entire reachable graph, giving V vertex work and E edge scans. V-entry initialization and the reserved queue also cost O(V) even for small h. The option “O(V + E) time, O(1) auxiliary space” omits distances and queue. The option “O(V(V + E)) time, O(V) auxiliary space” wrongly repeats the graph search per vertex. The option “O(V + E) time, O(V + E) auxiliary space” charges edge copies, but frontier entries contain only vertex IDs and the lists are reused.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "bounded-bfs",
+  "methodReveal": {
+    "title": "Expand only layers below the limit",
+    "description": "Initialize V distance entries to -1. Set distance[s]=0, count=1 and enqueue s. For each removed u, skip its outgoing list when distance[u]=h. Otherwise inspect neighbors, assigning unseen vertices distance[u]+1, increasing count and enqueueing them. Return count after the queue empties."
+  }
+}

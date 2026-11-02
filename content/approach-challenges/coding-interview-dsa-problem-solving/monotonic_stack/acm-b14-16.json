@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-16",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack",
+    "tree_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b14-16-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "Given n pairwise distinct signed integer priorities in index order, construct the unique binary tree whose inorder traversal visits indices 0 through n-1 and whose parent priority is smaller than each child priority. Return the root index and two arrays leftChild and rightChild, using -1 for missing children. Example: priorities [4,1,3] produce root 1, leftChild=[-1,0,-1], rightChild=[-1,2,-1]. Choose the best approach.",
+    "constraints": [
+      "The input is immutable; n is between 1 and 200,000. All integers, indices, counts, and arithmetic results fit in signed 64-bit machine words; comparisons and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "right-spine-stack",
+          "text": "Initialize child arrays to -1. Scan index i with an increasing-priority stack; set last=-1, then repeatedly pop larger tops into last. If a top remains set its right child to i; set leftChild[i]=last and push i. At the end the bottom stack index is the root.",
+          "grade": "correct",
+          "feedback": "The popped suffix is the rightmost existing subtree and must become the current index’s left subtree. The surviving smaller top remains its parent. Rewiring preserves inorder index order and the parent-smaller property."
+        },
+        {
+          "optionId": "B",
+          "approachId": "global-priority-sorted-chain",
+          "text": "Sort indices by priority and connect them as a chain, smallest priority first.",
+          "grade": "incorrect",
+          "feedback": "Heap order alone does not preserve inorder order. For [4,1,3], the smallest priority at index 1 must have both a left and a right child, not a chain."
+        },
+        {
+          "optionId": "C",
+          "approachId": "adjacent-smaller-parent",
+          "text": "Make each index a child of the immediately preceding index if that priority is smaller; otherwise make it a new root without reattaching prior nodes.",
+          "grade": "incorrect",
+          "feedback": "Earlier subtrees cannot be discarded. For [4,1,3], index 0 must become the left child of index 1, but this rule leaves it disconnected."
+        },
+        {
+          "optionId": "D",
+          "approachId": "recursive-minimum-scans",
+          "text": "Find the minimum priority in the whole interval as root, then repeat on each left and right subinterval.",
+          "grade": "incorrect",
+          "feedback": "It constructs the correct tree, but an increasing priority array forces nearly full rescans of successively shorter intervals, causing quadratic work."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Maintain the unfinished right spine while reparenting a displaced suffix as a new left subtree.",
+      "details": [
+        "Keep the current tree’s increasing-priority right spine. Remove its larger-priority suffix when the next index arrives. The last removed node roots the new left subtree; a surviving top links to the new index on its right. Return the bottom stack index as root.",
+        "The stack is the current increasing-priority right spine. Popped larger priorities become the new node's left subtree; the surviving top links to it on the right. This preserves inorder index order and heap priority simultaneously.",
+        "“Initialize child arrays to -1. Scan index i with an increasing-priority stack; set last=-1, then repeatedly pop larger tops into last. If a top remains set its right child to i; set leftChild[i]=last and push i. At the end the bottom stack index is the root.”: The popped suffix is the rightmost existing subtree and must become the current index’s left subtree. The surviving smaller top remains its parent. Rewiring preserves inorder index order and the parent-smaller property.",
+        "“Sort indices by priority and connect them as a chain, smallest priority first.”: Heap order alone does not preserve inorder order. For [4,1,3], the smallest priority at index 1 must have both a left and a right child, not a chain.",
+        "“Make each index a child of the immediately preceding index if that priority is smaller; otherwise make it a new root without reattaching prior nodes.”: Earlier subtrees cannot be discarded. For [4,1,3], index 0 must become the left child of index 1, but this rule leaves it disconnected.",
+        "“Find the minimum priority in the whole interval as root, then repeat on each left and right subinterval.”: It constructs the correct tree, but an increasing priority array forces nearly full rescans of successively shorter intervals, causing quadratic work."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-16-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "For right-spine-stack, choose the tightest worst-case time and auxiliary-space pair. Let n be the priority count. Child arrays and root are the required output and excluded from auxiliary space; the separate index stack counts. Child rewiring updates output entries in place without copying subtrees.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each index has one push/pop lifetime and fixed child-link assignments.",
+      "details": [
+        "Every index is pushed once and popped at most once. Each iteration performs a constant number of child assignments, so time is O(n). Increasing priorities retain n indices on the right-spine stack, giving O(n) auxiliary space.",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "right-spine-stack",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "Keep the current tree’s increasing-priority right spine. Remove its larger-priority suffix when the next index arrives. The last removed node roots the new left subtree; a surviving top links to the new index on its right. Return the bottom stack index as root."
+  }
+}

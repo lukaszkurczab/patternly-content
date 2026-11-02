@@ -1,7 +1,7 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
   "problemId": "acm-b10-01",
-  "problemVersion": "1",
+  "problemVersion": "2",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "tree_traversal",
   "requiredFamilyIds": [
@@ -60,7 +60,14 @@
     "feedback": {
       "type": "approach_choice",
       "reason": "The task groups values by depth. Breadth-first search gives the levels directly; depth-first search can collect the same totals when it carries each node’s depth.",
-      "details": {}
+      "details": [
+        "Put the root in a queue. At the start of each iteration, record how many nodes are waiting. Process exactly that many nodes, adding their values and enqueueing their existing children. This completes one level. Keep the largest sum seen so far, and keep the shallower depth when sums tie.",
+        "Freeze the queue length before processing a level so newly enqueued children belong to the next sum. Initialize best from an actual level for negative trees, and retain the shallower level on equal sums.",
+        "“Process the tree one level at a time with a queue. Sum the values on each level, then keep the largest sum and the shallower depth when sums tie.”: The queue groups nodes by depth. After a whole level is processed, its sum is complete, so the tie rule can be applied directly.",
+        "“Use iterative depth-first search with a stack of (node, depth) pairs. Add each value to the sum for its depth, then choose the largest sum and the shallower depth when sums tie.”: The explicit stack and carried depth assign each node to exactly one level. After collecting the sums, apply the same selection rule as for breadth-first search.",
+        "“Collect the values at each depth into a separate list, sort each list, sum it, and choose the level with the largest sum.”: This returns the right result for every input, but sorting does not help compute a sum. You can remove the sorting and value lists and keep only the running sum for each level.",
+        "“Find the largest value among all nodes and return its depth.”: The answer depends on the sum of each whole level, not on its largest single node. Counterexample: 100(60(-,-),60(-,-)). The largest node, 100, is at depth 0, but the level sums are 100 and 120, so the correct answer is depth 1."
+      ]
     }
   },
   "complexityQuestion": {
@@ -103,36 +110,19 @@
     },
     "feedback": {
       "type": "choice_single",
-      "reason": "Each node enters the queue and is processed once, so the work grows with n. The queue holds at most a constant multiple of the widest level, so its peak space is proportional to w.",
-      "details": {
-        "time": "O(n)",
-        "additionalSpace": "O(w)",
-        "shapeNote": "In a chain, w = 1; in a wide tree, w can be proportional to n. Do not treat w and h as the same quantity.",
-        "correctness": "Every node is processed at its own depth. Comparing complete level sums and choosing the shallower depth on a tie implements the task definition.",
-        "otherCorrectMethod": "Iterative depth-first search with a map of sums by depth also visits n nodes. Its stack and map depend on the tree shape and height; breadth-first search keeps a queue related to width. The tree shape determines which structure is smaller.",
-        "optionExplanations": [
-          {
-            "optionId": "n-w",
-            "status": "correct",
-            "why": "Tight BFS cost: each node is processed once, and the queue is bounded by a constant multiple of the maximum width w."
-          },
-          {
-            "optionId": "n-h",
-            "status": "incorrect",
-            "why": "h describes the height and may bound a depth-first stack, but it does not bound the breadth-first queue; a wide tree separates them."
-          },
-          {
-            "optionId": "n-constant",
-            "status": "incorrect",
-            "why": "The queue may contain Θ(w) nodes."
-          },
-          {
-            "optionId": "nlogn-w",
-            "status": "incorrect",
-            "why": "The algorithm does not sort levels or search within them; each node receives a bounded amount of work."
-          }
-        ]
-      }
+      "reason": "Every node is queued once; peak frontier size follows tree width.",
+      "details": [
+        "Each node enters the queue and is processed once, so the work grows with n. The queue holds at most a constant multiple of the widest level, so its peak space is proportional to w.",
+        "Time: O(n).",
+        "Auxiliary space: O(w).",
+        "In a chain, w = 1; in a wide tree, w can be proportional to n. Do not treat w and h as the same quantity.",
+        "Every node is processed at its own depth. Comparing complete level sums and choosing the shallower depth on a tie implements the task definition.",
+        "Iterative depth-first search with a map of sums by depth also visits n nodes. Its stack and map depend on the tree shape and height; breadth-first search keeps a queue related to width. The tree shape determines which structure is smaller.",
+        "“O(n) time, O(w) additional space”: Tight BFS cost: each node is processed once, and the queue is bounded by a constant multiple of the maximum width w.",
+        "“O(n) time, O(h) additional space, where h is the height”: h describes the height and may bound a depth-first stack, but it does not bound the breadth-first queue; a wide tree separates them.",
+        "“O(n) time, O(1) additional space”: The queue may contain Θ(w) nodes.",
+        "“O(n log n) time, O(w) additional space”: The algorithm does not sort levels or search within them; each node receives a bounded amount of work."
+      ]
     }
   },
   "analyzedApproachId": "bfs-level-sums",

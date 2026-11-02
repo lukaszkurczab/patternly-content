@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b08-19",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "stack",
+  "requiredFamilyIds": [
+    "stack"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "lazy-bottom-increment-boundary",
+    "difficulty": "hard",
+    "questionId": "acm-b08-19-q1",
+    "prompt": "A bounded container starts empty. An immutable list has n commands, 0 <= n <= 200,000. PUSH(x) adds x at the top. POP removes and reports the top, or reports EMPTY when empty. ADD_BOTTOM(k,d) adds d to the bottom min(k,current size) entries, with 0 <= k <= 200,000. Return the POP reports in order. All values, deltas and accumulated arithmetic fit signed 64-bit integers. Choose a method minimizing worst-case total time over all commands. Input: [PUSH(4),PUSH(7),ADD_BOTTOM(2,3),POP,POP,POP]. Output: [10,7,EMPTY].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "lazy-boundary-deltas",
+          "text": "Store a value and pending increment for each depth. For ADD_BOTTOM, add d only to pending[min(k,size)-1] when nonempty and k>0. On POP, report top value plus pending, pass that pending down one depth, then remove top.",
+          "grade": "correct",
+          "feedback": "A pending increment represents the entire prefix ending at its depth; passing it downward on a pop preserves it for the remaining prefix."
+        },
+        {
+          "optionId": "B",
+          "approachId": "eager-bottom-update",
+          "text": "Store entries in an array stack and explicitly add d to each of the selected bottom entries for every ADD_BOTTOM.",
+          "grade": "partial",
+          "feedback": "It returns the correct values, but repeated wide increments revisit entries that can share one deferred boundary delta."
+        },
+        {
+          "optionId": "C",
+          "approachId": "increment-top-k",
+          "text": "Apply ADD_BOTTOM to the newest k entries instead.",
+          "grade": "incorrect",
+          "feedback": "[PUSH(4),PUSH(7),ADD_BOTTOM(1,3),POP] must report 7, but updating the top reports 10."
+        },
+        {
+          "optionId": "D",
+          "approachId": "drop-pending-on-pop",
+          "text": "Use pending boundary deltas but discard a popped pending delta without passing it downward.",
+          "grade": "incorrect",
+          "feedback": "In the example, the first POP reports 10, but the next wrongly reports 4 rather than 7 because the bottom entry loses the shared increment."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A boundary delta can represent an increment shared by a whole active prefix.",
+      "details": [
+        "Initialize pending to zero on PUSH. Record an increment at the highest affected depth. On POP, include the top pending delta in the report and transfer that delta to the entry immediately below before deleting the top.",
+        "A pending increment stored at depth d applies to every entry below it. On popping that depth, propagate its delta downward before deletion. Otherwise older entries would lose deferred increments that still belong to them.",
+        "“Store a value and pending increment for each depth. For ADD_BOTTOM, add d only to pending[min(k,size)-1] when nonempty and k>0. On POP, report top value plus pending, pass that pending down one depth, then remove top.”: A pending increment represents the entire prefix ending at its depth; passing it downward on a pop preserves it for the remaining prefix.",
+        "“Store entries in an array stack and explicitly add d to each of the selected bottom entries for every ADD_BOTTOM.”: It returns the correct values, but repeated wide increments revisit entries that can share one deferred boundary delta.",
+        "“Apply ADD_BOTTOM to the newest k entries instead.”: [PUSH(4),PUSH(7),ADD_BOTTOM(1,3),POP] must report 7, but updating the top reports 10.",
+        "“Use pending boundary deltas but discard a popped pending delta without passing it downward.”: In the example, the first POP reports 10, but the next wrongly reports 4 rather than 7 because the bottom entry loses the shared increment."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "lazy-bottom-increment-boundary",
+    "difficulty": "hard",
+    "questionId": "acm-b08-19-q2",
+    "prompt": "For lazy-boundary-deltas, choose the tightest worst-case total time and auxiliary-space bounds in terms of n, the input length.",
+    "constraints": [
+      "The input is immutable and excluded from auxiliary space. Returned output is excluded, but all working buffers count even if later copied into output.",
+      "Fixed-size integers, characters, indices and comparisons take constant time. Arithmetic is unit cost under the stated range guarantee.",
+      "Use an iterative implementation with a preallocated n-entry array and a top index: push and pop take constant time. No recursion, hashing, or hidden whole-buffer copies occur.",
+      "Materializing output takes time proportional to its length; no persistent snapshots or string concatenation are used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-linear",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "logarithmic-linear",
+          "text": "O(log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-linear"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each command changes fixed stack entries instead of looping over an incremented prefix.",
+      "details": [
+        "Each command changes at most a fixed number of entries; each POP writes one report. All commands may be PUSH, so arrays retain n values and n deltas. Total time is O(n), auxiliary space O(n), with result materialization at most linear.",
+        "Time: O(n).",
+        "Auxiliary space: O(n).",
+        "“O(n) time, O(1) auxiliary space”: n PUSH commands retain n base values and n pending-delta entries even without POP output.",
+        "“O(n²) time, O(n) auxiliary space”: INCREMENT updates one boundary delta and POP propagates one delta downward, avoiding a scan through every affected entry.",
+        "“O(log n) time, O(n) auxiliary space”: A late increment or pop changes the reported values, so arbitrary streams require all command inspections."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "linear-constant",
+          "text": "n PUSH commands retain n base values and n pending-delta entries even without POP output."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "quadratic-linear",
+          "text": "INCREMENT updates one boundary delta and POP propagates one delta downward, avoiding a scan through every affected entry."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "logarithmic-linear",
+          "text": "A late increment or pop changes the reported values, so arbitrary streams require all command inspections."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "lazy-boundary-deltas",
+  "methodReveal": {
+    "title": "Defer each prefix increment at its boundary",
+    "description": "Initialize pending to zero on PUSH. Record an increment at the highest affected depth. On POP, include the top pending delta in the report and transfer that delta to the entry immediately below before deleting the top."
+  }
+}

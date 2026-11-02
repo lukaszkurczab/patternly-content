@@ -1,7 +1,7 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
   "problemId": "acm-b03-01",
-  "problemVersion": "1.0.0",
+  "problemVersion": "1.0.1",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "hash_map_and_set",
   "requiredFamilyIds": [
@@ -61,7 +61,14 @@
     "feedback": {
       "type": "approach_choice",
       "reason": "Use prior state carefully: the current position must not be eligible as its own partner.",
-      "details": {}
+      "details": [
+        "Visit values in input order. For the current value, compute target minus that value and check the map containing only earlier values. If the complement is present, return its saved index and the current index. Otherwise, save the current value and its index if this value has not been saved before. If the scan ends, return [-1, -1].",
+        "The map contains only earlier indices. Query before inserting so a value cannot pair with itself; equal values at two distinct positions remain a valid pair.",
+        "“Scan from left to right. Before storing the current value, look up target − currentValue in a map of earlier values to one earlier index. If found, return those two indices; otherwise store the current value if it is not already present.”: The map represents only positions already passed, so a match always uses two distinct indices. Keeping one earlier index per value is sufficient because any valid pair is accepted.",
+        "“Sort a copy of (value, originalIndex) pairs, use two pointers to find two values with the target sum, then return their original indices.”: This remains correct because the copy preserves each original index and the two pointers use distinct entries. Sorting is removable: a direct complement lookup avoids ordering all entries first.",
+        "“Try every pair of distinct indices and return as soon as their values sum to the target.”: This is correct but brute force: it repeats pair comparisons even though prior values can be queried directly.",
+        "“Store the current value in the map, then look up its complement and return the two associated indices.”: The current element can match itself. For values = [6] and target = 12, this returns the same index twice although no valid pair exists."
+      ]
     }
   },
   "complexityQuestion": {
@@ -102,24 +109,16 @@
     },
     "feedback": {
       "type": "choice_single",
-      "reason": "Each input position causes one complement lookup and at most one insertion. The selected pair is assessed under the stated expected/amortized hash model; it is not a deterministic worst-case bound.",
-      "details": {
-        "analyzedMethod": "The fixed target uses a map from each previously seen value to one original index. It checks before inserting the current value, so every returned pair uses distinct positions.",
-        "time": "Expected O(n): n expected-constant-time lookups and at most n expected-constant-time insertions. With adversarial collisions, ordinary hash maps can take O(n²) total; no unconditional worst-case O(n) claim is made.",
-        "additionalSpace": "O(u), at most O(n), for saved distinct values and their indices. Input and returned pair are excluded.",
-        "q1Alternatives": {
-          "prior-value-index-map": "Correct and the fixed target. It preserves index provenance and checks only earlier positions.",
-          "sort-value-index-copy": "Correct for any valid pair. It sorts a copy of n value/index pairs, then scans them; expected or deterministic comparison sorting takes O(n log n) time and O(n) copy space.",
-          "enumerate-all-pairs": "Correct but brute force, with O(n²) pair checks and O(1) additional space.",
-          "store-before-lookup": "Incorrect: [6], target 12 can reuse the same position."
-        },
-        "q2Options": {
-          "linear-expected-linear-space": "Correct under the prompt’s explicit expected/amortized hash-operation assumption.",
-          "linear-worst-linear-space": "Incorrect because the prompt does not guarantee constant-time hash operations under every collision pattern.",
-          "quadratic-constant-space": "Incorrect for the fixed map method: this is looser time than its expected bound.",
-          "n-log-n-linear-space": "Incorrect for the fixed map method: it does not sort."
-        }
-      }
+      "reason": "One expected-cost lookup per input position uses a map of earlier values.",
+      "details": [
+        "Each input position causes one complement lookup and at most one insertion. The selected pair is assessed under the stated expected/amortized hash model; it is not a deterministic worst-case bound.",
+        "Expected O(n): n expected-constant-time lookups and at most n expected-constant-time insertions. With adversarial collisions, ordinary hash maps can take O(n²) total; no unconditional worst-case O(n) claim is made.",
+        "O(u), at most O(n), for saved distinct values and their indices. Input and returned pair are excluded.",
+        "“Expected O(n) time; O(u) auxiliary space, where u is the number of distinct values stored.”: Correct under the prompt’s explicit expected/amortized hash-operation assumption.",
+        "“Guaranteed worst-case O(n) time for every hash distribution; O(u) auxiliary space.”: Incorrect because the prompt does not guarantee constant-time hash operations under every collision pattern.",
+        "“O(n²) time; O(1) auxiliary space.”: Incorrect for the fixed map method: this is looser time than its expected bound.",
+        "“O(n log n) time; O(n) auxiliary space.”: Incorrect for the fixed map method: it does not sort."
+      ]
     }
   },
   "analyzedApproachId": "prior-value-index-map",

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b18-09",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "backtracking",
+  "requiredFamilyIds": [
+    "backtracking"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b18-09-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "choose_backtracking_state",
+    "prompt": "Three Operators\n\nBetween each adjacent pair of digits in a nonempty decimal digit string, insert exactly one operator from +, -, *. Do not concatenate digits and do not add parentheses. Return every resulting expression whose integer value equals target, using usual multiplication precedence. Each expression appears once.\n\nExamples:\ndigits=\"123\", target=7 -> [\"1+2*3\"].\ndigits=\"12\", target=2 -> [\"1*2\"].\ndigits=\"0\", target=0 -> [\"0\"].\n\nConstraints: 1 <= n=digits.length <= 10; each character is a digit 0..9; -1000000000 <= target <= 1000000000. All intermediate values fit signed 64-bit integers.",
+    "constraints": [],
+    "difficulty": "hard",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "acm-b18-09-search",
+          "text": "Carry the evaluated total and the last signed term. On multiplication, replace that last term by its product with the next digit; try all three operators at each gap.",
+          "grade": "correct",
+          "feedback": "The last signed term is exactly the part that multiplication must extend before addition or subtraction. This keeps precedence correct without reevaluating the full prefix."
+        },
+        {
+          "optionId": "B",
+          "approachId": "acm-b18-09-alternative-1",
+          "text": "Evaluate every new operator immediately from left to right using only the running total.",
+          "grade": "incorrect",
+          "feedback": "For digits=\"123\", \"1+2*3\" is 7, but left-to-right evaluation produces 9 and can miss the required expression."
+        },
+        {
+          "optionId": "C",
+          "approachId": "acm-b18-09-alternative-2",
+          "text": "Treat subtraction as a negative total but store the last digit as a positive lastTerm.",
+          "grade": "incorrect",
+          "feedback": "For digits=\"123\", \"1-2*3\" must be -5. A positive lastTerm=2 after the subtraction makes the replacement formula produce 3 instead."
+        },
+        {
+          "optionId": "D",
+          "approachId": "acm-b18-09-extra-work",
+          "text": "Enumerate all operator strings and evaluate each full expression with a fresh precedence-aware parser.",
+          "grade": "partial",
+          "feedback": "This is correct for all inputs, but repeatedly rescans long expressions; constant-size running arithmetic state removes that work."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The last signed term is exactly the part that multiplication must extend before addition or subtraction. This keeps precedence correct without reevaluating the full prefix.",
+      "details": [
+        "Initialize total and lastTerm from the first digit. At every gap branch over the three operators. For a next digit d, addition sets (total+d,d), subtraction (total-d,-d), and multiplication (total-lastTerm+lastTerm*d,lastTerm*d). Copy matching expressions only after the last gap.",
+        "lastTerm retains the signed multiplication chain. Replace that term inside total when multiplying, so multiplication binds tighter than prior addition/subtraction. Undo buffer changes without recomputing the entire expression prefix.",
+        "“Carry the evaluated total and the last signed term. On multiplication, replace that last term by its product with the next digit; try all three operators at each gap.”: The last signed term is exactly the part that multiplication must extend before addition or subtraction. This keeps precedence correct without reevaluating the full prefix.",
+        "“Evaluate every new operator immediately from left to right using only the running total.”: For digits=\"123\", \"1+2*3\" is 7, but left-to-right evaluation produces 9 and can miss the required expression.",
+        "“Treat subtraction as a negative total but store the last digit as a positive lastTerm.”: For digits=\"123\", \"1-2*3\" must be -5. A positive lastTerm=2 after the subtraction makes the replacement formula produce 3 instead.",
+        "“Enumerate all operator strings and evaluate each full expression with a fresh precedence-aware parser.”: This is correct for all inputs, but repeatedly rescans long expressions; constant-size running arithmetic state removes that work."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b18-09-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "choose_backtracking_state",
+    "prompt": "Analyze `acm-b18-09-search` only. Let R be the number of characters copied into returned expressions. Use a mutable expression buffer and constant-time 64-bit arithmetic. The method visits all three branches at each of n-1 gaps, even if no expression matches. Choose the tightest stated time and auxiliary-space pair. Count recursion and mutable working state; exclude supplied input and returned output storage, but include copying work in time. Primitive integer/index operations and preallocated-array updates cost constant time; dynamic appends are amortized constant time. No hashing is used unless explicitly stated.",
+    "constraints": [],
+    "difficulty": "hard",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(3ⁿ + R) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "cost-0",
+          "text": "O(n·3ⁿ + R) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(3ⁿ + R) time, O(3ⁿ) auxiliary space"
+        },
+        {
+          "optionId": "cost-2",
+          "text": "O(n + R) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Three choices per gap create exponential search work plus copied matching expressions.",
+      "details": [
+        "The full ternary tree has a geometric sum of calls proportional to 3^(n-1), equivalent to 3ⁿ up to constants. Each edge updates constant-size arithmetic state; copying matching buffers adds R.",
+        "The expression buffer has 2n-1 characters and recursion depth n. Arithmetic state per frame is constant.",
+        "Let R be the number of characters copied into returned expressions. Use a mutable expression buffer and constant-time 64-bit arithmetic. The method visits all three branches at each of n-1 gaps, even if no expression matches.",
+        "“O(n·3ⁿ + R) time, O(n) auxiliary space”: The revealed method never parses each complete expression from scratch.",
+        "“O(3ⁿ + R) time, O(3ⁿ) auxiliary space”: It does not store the full search tree.",
+        "“O(n + R) time, O(n) auxiliary space”: All operator combinations are examined, including unsuccessful ones."
+      ]
+    }
+  },
+  "analyzedApproachId": "acm-b18-09-search",
+  "methodReveal": {
+    "title": "Repair the last additive term",
+    "description": "Initialize total and lastTerm from the first digit. At every gap branch over the three operators. For a next digit d, addition sets (total+d,d), subtraction (total-d,-d), and multiplication (total-lastTerm+lastTerm*d,lastTerm*d). Copy matching expressions only after the last gap."
+  }
+}

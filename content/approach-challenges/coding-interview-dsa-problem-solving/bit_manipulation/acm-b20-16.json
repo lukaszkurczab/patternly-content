@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b20-16",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "bit_manipulation",
+  "requiredFamilyIds": [
+    "bit_manipulation",
+    "prefix_sums"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b20-16-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "bit_manipulation",
+    "mentalUnitId": "word_prefix_rank_queries",
+    "difficulty": "medium",
+    "prompt": "A static bitmap is packed into m W-bit words. Within each word, the lowest bit represents the earliest position. For each of q queries p, return the number of set bits among positions 0 through p-1; p=0 asks about the empty prefix.\n\nConstraints: 1 <= W <= 64; 1 <= m,q <= 200000; 0 <= p <= mW.\nExample: W=4, words=[11,4], queries=[0,3,4,8] -> [0,2,3,4].\n\nChoose the best approach under these constraints.",
+    "constraints": [
+      "W is a parameter. W-bit popcount, shifts and masks cost constant time. Counters/indices fit in machine words large enough for mW and q. Query results occupy the returned q-entry array.",
+      "Inputs are read-only. Include all temporary storage and any call stack; exclude the supplied input and the returned output. No input copy is implicit."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "prefix-whole-word-counts",
+          "text": "Build counts for prefixes of whole words. For query p, use b=floor(p/W) and r=p mod W: add prefix[b] to the popcount of the lowest r bits of word b; when r=0, add zero without reading word b.",
+          "grade": "correct",
+          "feedback": "The prefix splits into complete words and one partial word. The r=0 case also handles p=mW without an out-of-range access."
+        },
+        {
+          "optionId": "B",
+          "approachId": "scan-query-prefixes",
+          "text": "For each query, scan its complete words and count the low bits of its final partial word, without preprocessing.",
+          "grade": "partial",
+          "feedback": "It returns the right count for all boundaries, but repeats full-word work across queries."
+        },
+        {
+          "optionId": "C",
+          "approachId": "prefix-every-bit",
+          "text": "Unpack all mW bits and build a cumulative count for every bit position; answer queries from that array.",
+          "grade": "partial",
+          "feedback": "This is correct but expands each word into W stored positions, which the packed prefix method avoids."
+        },
+        {
+          "optionId": "D",
+          "approachId": "round-query-up",
+          "text": "Return the total count through the entire word containing the last queried bit, ignoring the exact partial-word boundary.",
+          "grade": "incorrect",
+          "feedback": "For W=4, words=[11], p=1, this returns 3 instead of 1."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Whole-word prefixes account for complete words before a query boundary.",
+      "details": [
+        "Precompute one count per whole-word prefix, starting with zero. A query uses that count and at most one masked popcount on the trailing partial word. Skip that read when the remainder is zero, including the end-of-bitmap query.",
+        "Whole-word prefixes account for complete words before a query boundary. Mask and popcount only the final partial word. A boundary exactly at a word end must not read the next word, especially at bitmap end.",
+        "“Build counts for prefixes of whole words. For query p, use b=floor(p/W) and r=p mod W: add prefix[b] to the popcount of the lowest r bits of word b; when r=0, add zero without reading word b.”: The prefix splits into complete words and one partial word. The r=0 case also handles p=mW without an out-of-range access.",
+        "“For each query, scan its complete words and count the low bits of its final partial word, without preprocessing.”: It returns the right count for all boundaries, but repeats full-word work across queries.",
+        "“Unpack all mW bits and build a cumulative count for every bit position; answer queries from that array.”: This is correct but expands each word into W stored positions, which the packed prefix method avoids.",
+        "“Return the total count through the entire word containing the last queried bit, ignoring the exact partial-word boundary.”: For W=4, words=[11], p=1, this returns 3 instead of 1."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b20-16-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "bit_manipulation",
+    "mentalUnitId": "word_prefix_rank_queries",
+    "difficulty": "medium",
+    "prompt": "For prefix-whole-word-counts, choose the tightest worst-case time and auxiliary-space pair. Let m be the payload word count and q the query count. W remains a parameter.",
+    "constraints": [
+      "W is a parameter. W-bit popcount, shifts and masks cost constant time. Counters/indices fit in machine words large enough for mW and q. Query results occupy the returned q-entry array.",
+      "Inputs are read-only. Include all temporary storage and any call stack; exclude the supplied input and the returned output. No input copy is implicit."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "O(m+q) time, O(m) auxiliary space"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "O(mq) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "O(mW+q) time, O(mW) auxiliary space"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "O(q) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-1"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Build m+1 counters and answer q queries with fixed word work.",
+      "details": [
+        "Whole-word prefix construction visits m words and creates m+1 counters. Each query uses fixed word work. The q result entries are output and excluded; no unpacked bitmap or recursive stack is used.",
+        "Time: O(m+q).",
+        "Auxiliary space: O(m).",
+        "W is a parameter. W-bit popcount, shifts and masks cost constant time. Counters/indices fit in machine words large enough for mW and q. Query results occupy the returned q-entry array.",
+        "“O(mq) time, O(1) auxiliary space”: That describes scanning each query prefix rather than storing a whole-word prefix array.",
+        "“O(mW+q) time, O(mW) auxiliary space”: This describes expanding to per-bit prefixes.",
+        "“O(q) time, O(1) auxiliary space”: This omits preprocessing and its retained count array."
+      ]
+    }
+  },
+  "analyzedApproachId": "prefix-whole-word-counts",
+  "methodReveal": {
+    "title": "Method to analyze",
+    "description": "Precompute one count per whole-word prefix, starting with zero. A query uses that count and at most one masked popcount on the trailing partial word. Skip that read when the remainder is zero, including the end-of-bitmap query."
+  }
+}

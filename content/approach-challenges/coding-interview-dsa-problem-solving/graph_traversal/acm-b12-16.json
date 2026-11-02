@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-16",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-16-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "topological_order_intro",
+    "difficulty": "medium",
+    "prompt": "A valid preparation order. V jobs must each run once. A directed edge u->v means u must finish before v starts. Return any ordering of all job IDs that respects every dependency, or [] if no ordering exists. Dependencies may form cycles. No lexical or numeric tie-breaking is required.\n\nInput: read-only outgoing lists for IDs 0..V-1; 1 <= V <= 200000, 0 <= E <= 400000. No duplicate edges or self-loops. Output an array of V IDs or [].\n\nExample: lists=[[2],[2],[],[]], valid outputs include [0,1,3,2] and [3,1,0,2]. For lists=[[1],[0]], output=[].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "zero-indegree-order",
+          "text": "Compute indegrees, queue every zero-indegree job, and repeatedly append a queued job while decrementing its outgoing neighbors. Enqueue a neighbor when its indegree becomes zero. Return the order only if all V jobs were appended.",
+          "grade": "correct",
+          "feedback": "A zero-indegree job has no unfinished prerequisites. Removing its edges maintains that invariant, and failure to process every job exposes a cycle."
+        },
+        {
+          "optionId": "B",
+          "approachId": "dfs-finish-order",
+          "text": "Run a three-state DFS forest with resumable frames. Reject an edge to an active ancestor. Append each job when its outgoing list finishes, and reverse the finished list if no cycle was found.",
+          "grade": "correct",
+          "feedback": "Finishing places every downstream job before its predecessor in the temporary list; reversing yields a valid dependency order. Active-state checks reject cycles. This has the same resource bounds as indegree processing."
+        },
+        {
+          "optionId": "C",
+          "approachId": "ordinary-bfs-order",
+          "text": "Run BFS over all components starting from the smallest unvisited ID, and return discovery order without computing prerequisites.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[],[0]], ordinary discovery can return [0,1], but dependency 1->0 requires [1,0]. Reachability order is not dependency order."
+        },
+        {
+          "optionId": "D",
+          "approachId": "priority-queue-order",
+          "text": "Use indegree elimination, but maintain all available zero-indegree jobs in a binary min-heap and always choose the smallest ID.",
+          "grade": "partial",
+          "feedback": "This produces a valid order or correctly detects a cycle. Numeric tie-breaking is not required, so ordering all available IDs in a heap adds removable work compared with a queue."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Availability depends on all prerequisites having finished, rather than on first discovering a job from one predecessor.",
+      "details": [
+        "Compute an indegree array by scanning every outgoing edge. Enqueue all zero-indegree jobs. Remove one job, append it to an output order, and decrement indegrees of all its outgoing neighbors, enqueuing any that become zero. Return the order if its length is V; otherwise discard it and return [].",
+        "Zero indegree means every prerequisite has already been removed. Each outgoing edge reduces its dependent's remaining count once. If fewer than V jobs are emitted, a cycle leaves no valid next job.",
+        "“Compute indegrees, queue every zero-indegree job, and repeatedly append a queued job while decrementing its outgoing neighbors. Enqueue a neighbor when its indegree becomes zero. Return the order only if all V jobs were appended.”: A zero-indegree job has no unfinished prerequisites. Removing its edges maintains that invariant, and failure to process every job exposes a cycle.",
+        "“Run a three-state DFS forest with resumable frames. Reject an edge to an active ancestor. Append each job when its outgoing list finishes, and reverse the finished list if no cycle was found.”: Finishing places every downstream job before its predecessor in the temporary list; reversing yields a valid dependency order. Active-state checks reject cycles. This has the same resource bounds as indegree processing.",
+        "“Run BFS over all components starting from the smallest unvisited ID, and return discovery order without computing prerequisites.”: For lists=[[],[0]], ordinary discovery can return [0,1], but dependency 1->0 requires [1,0]. Reachability order is not dependency order.",
+        "“Use indegree elimination, but maintain all available zero-indegree jobs in a binary min-heap and always choose the smallest ID.”: This produces a valid order or correctly detects a cycle. Numeric tie-breaking is not required, so ordering all available IDs in a heap adds removable work compared with a queue."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-16-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "topological_order_intro",
+    "difficulty": "medium",
+    "prompt": "Analyze zero-indegree-order. V counts jobs and E dependencies. Initialize V indegrees, scan every edge to build them, then use a preallocated V-slot FIFO queue with constant-time head/tail operations. Fill a V-slot output buffer; on failure return [] and treat the discarded buffer as working storage. Count output construction time. Exclude input and the returned output only, but include indegrees, queue and any discarded temporary buffer. No hashing, recursion, shifting, amortized growth, or input copying.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Build indegrees and eliminate vertices/edges once using a queue.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: indegree construction scans V entries and E edges; elimination processes each job once and each edge once. Indegrees and queue use O(V), as can the failed temporary order. The option “O(V + E) time, O(1) auxiliary space” omits these structures. C repeats prerequisite work per job unnecessarily. The option “O(V + E) time, O(V + E) auxiliary space” counts the supplied edges as extra storage although they are reused directly.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "zero-indegree-order",
+  "methodReveal": {
+    "title": "Remove available prerequisites",
+    "description": "Compute an indegree array by scanning every outgoing edge. Enqueue all zero-indegree jobs. Remove one job, append it to an output order, and decrement indegrees of all its outgoing neighbors, enqueuing any that become zero. Return the order if its length is V; otherwise discard it and return []."
+  }
+}

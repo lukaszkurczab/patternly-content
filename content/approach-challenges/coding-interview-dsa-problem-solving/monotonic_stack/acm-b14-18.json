@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-18",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b14-18-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "medium",
+    "prompt": "A cross-section is divided into n adjacent strips. Strip i has a positive integer width w[i] and nonnegative integer usable height h[i]. A rectangle must cover a nonempty contiguous group of whole strips; its height cannot exceed any covered strip height. Return the greatest possible rectangle area. Widths and heights are at most 1,000,000. Example: heights [3,1,3] and widths [2,4,1] return 7 from all strips; the first strip alone gives 6. Choose the best approach.",
+    "constraints": [
+      "The input is immutable; n is between 1 and 200,000. All integers, indices, counts, and arithmetic results fit in signed 64-bit machine words; comparisons and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "coordinate-start-stack",
+          "text": "Scan strips with cumulative left coordinate x and an increasing stack of (height,startCoordinate). Set start=x. Pop tops higher than h[i], evaluating top.height × (x-top.start) and carrying top.start into start. Push (h[i],start) only if the stack is empty or its top is lower. Advance x by w[i]. At the end evaluate each remaining pair using total width as the right coordinate.",
+          "grade": "correct",
+          "feedback": "A shorter strip closes every taller candidate at its left edge. The new height can extend back through all removed candidates, so carrying the earliest start preserves the widest eligible physical span; equal height already has an earlier start."
+        },
+        {
+          "optionId": "B",
+          "approachId": "unit-width-span",
+          "text": "Run an ordinary height-stack rectangle calculation and multiply each height by the number of covered strips.",
+          "grade": "incorrect",
+          "feedback": "Strip count is not physical width. For heights [2] and widths [5], the area is 10, not 2."
+        },
+        {
+          "optionId": "C",
+          "approachId": "individual-strips-only",
+          "text": "Return the greatest h[i]×w[i].",
+          "grade": "incorrect",
+          "feedback": "A rectangle may span several strips. For heights [2,2] and widths [3,4], the answer is 14, not 8."
+        },
+        {
+          "optionId": "D",
+          "approachId": "enumerate-strip-intervals",
+          "text": "Enumerate every strip interval, maintaining its minimum height and total width, and maximize their product.",
+          "grade": "incorrect",
+          "feedback": "This is correct but evaluates every interval, causing quadratic work. Physical-coordinate candidate starts avoid that enumeration."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Measure resolved spans in physical coordinates while carrying the earliest viable start through pops.",
+      "details": [
+        "Track physical left edges using a running width sum. A new shorter height closes taller candidates at the current coordinate and inherits their earliest start. An equal height needs no new entry. After the scan close all surviving candidates at the total width.",
+        "Rectangle width is physical distance, not the number of strips. A shorter incoming height inherits the earliest start of every taller closed candidate. Equal heights can share that earliest start without another stack entry.",
+        "“Scan strips with cumulative left coordinate x and an increasing stack of (height,startCoordinate). Set start=x. Pop tops higher than h[i], evaluating top.height × (x-top.start) and carrying top.start into start. Push (h[i],start) only if the stack is empty or its top is lower. Advance x by w[i]. At the end evaluate each remaining pair using total width as the right coordinate.”: A shorter strip closes every taller candidate at its left edge. The new height can extend back through all removed candidates, so carrying the earliest start preserves the widest eligible physical span; equal height already has an earlier start.",
+        "“Run an ordinary height-stack rectangle calculation and multiply each height by the number of covered strips.”: Strip count is not physical width. For heights [2] and widths [5], the area is 10, not 2.",
+        "“Return the greatest h[i]×w[i].”: A rectangle may span several strips. For heights [2,2] and widths [3,4], the answer is 14, not 8.",
+        "“Enumerate every strip interval, maintaining its minimum height and total width, and maximize their product.”: This is correct but evaluates every interval, causing quadratic work. Physical-coordinate candidate starts avoid that enumeration."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-18-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "medium",
+    "prompt": "For coordinate-start-stack, choose the tightest worst-case time and auxiliary-space pair. Let n be the strip count. Read both arrays directly, using a scalar coordinate and a stack of height/start pairs. Do not expand strips into unit-width cells or copy their contents.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Accumulate strip widths and close each height candidate once.",
+      "details": [
+        "Every strip causes at most one push and every entry is popped at most once. Closing candidates and summing widths therefore take O(n) time, regardless of the numeric widths. An increasing-height row retains n entries, giving O(n) auxiliary space.",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "coordinate-start-stack",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "Track physical left edges using a running width sum. A new shorter height closes taller candidates at the current coordinate and inherits their earliest start. An equal height needs no new entry. After the scan close all surviving candidates at the total width."
+  }
+}

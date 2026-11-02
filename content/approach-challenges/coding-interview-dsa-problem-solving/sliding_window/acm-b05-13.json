@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b05-13",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "sliding_window",
+  "requiredFamilyIds": [
+    "sliding_window",
+    "monotonic_stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b05-13-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "sliding_window",
+    "mentalUnitId": "fixed_size_window",
+    "difficulty": "medium",
+    "prompt": "Largest Reading in Each Packet\n\nReturn an array containing the largest reading in every contiguous packet of exactly k entries, in start-index order. Values may repeat and may be negative.\n\nLimits and assumptions:\n• 1 ≤ n ≤ 200000; 1 ≤ k ≤ n; -10^9 ≤ readings[i] ≤ 10^9.\n• Input `readings` is read-only. The result has n-k+1 entries.\n\nExamples:\n1. readings = [4,1,4,2,5], k = 3 → [4,4,5].\n2. readings = [-4,-2], k = 1 → [-4,-2].\n\nChoose one approach.",
+    "constraints": [
+      "1 ≤ n ≤ 200000; 1 ≤ k ≤ n; -10^9 ≤ readings[i] ≤ 10^9.",
+      "Input `readings` is read-only. The result has n-k+1 entries."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "decreasing-index-deque",
+          "text": "Keep a deque of indices with decreasing values. Expire indices outside the current packet and pop indices from the back when their value is no greater than the incoming value. Append the front value for each full packet.",
+          "grade": "correct",
+          "feedback": "A later index with an equal or larger value outlives and dominates an earlier one. The front is the greatest unexpired candidate."
+        },
+        {
+          "optionId": "B",
+          "approachId": "scan-each-packet",
+          "text": "Scan all k entries of every packet and append its greatest value.",
+          "grade": "partial",
+          "feedback": "This returns every required maximum but repeatedly scans overlapping packets."
+        },
+        {
+          "optionId": "C",
+          "approachId": "single-max-no-expiry",
+          "text": "Store only the greatest value seen so far and append it for every complete packet.",
+          "grade": "incorrect",
+          "feedback": "For [9,1,2], k=2 the second answer is two; the historical nine has expired."
+        },
+        {
+          "optionId": "D",
+          "approachId": "remove-by-value-set",
+          "text": "Store distinct active values in a set; remove the outgoing value unconditionally and return the greatest remaining value.",
+          "grade": "incorrect",
+          "feedback": "For [5,5,1], k=2 removing the first five loses the second copy, incorrectly producing one for the last packet."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A newer equal maximum is preferable because it expires later.",
+      "details": [
+        "Maintain a deque of indices with strictly decreasing values. For each right index expire indices less than right-k+1, pop back indices whose values are no greater than the incoming value, append right, and emit the front value once k entries are available. Use deque ends without shifting.",
+        "A newer equal maximum is preferable because it expires later. Removing the older equal entry is safe, but expiration still depends on index rather than value. The front is the greatest surviving candidate for each complete packet.",
+        "“Keep a deque of indices with decreasing values. Expire indices outside the current packet and pop indices from the back when their value is no greater than the incoming value. Append the front value for each full packet.”: A later index with an equal or larger value outlives and dominates an earlier one. The front is the greatest unexpired candidate.",
+        "“Scan all k entries of every packet and append its greatest value.”: This returns every required maximum but repeatedly scans overlapping packets.",
+        "“Store only the greatest value seen so far and append it for every complete packet.”: For [9,1,2], k=2 the second answer is two; the historical nine has expired.",
+        "“Store distinct active values in a set; remove the outgoing value unconditionally and return the greatest remaining value.”: For [5,5,1], k=2 removing the first five loses the second copy, incorrectly producing one for the last packet."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b05-13-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "sliding_window",
+    "mentalUnitId": "fixed_size_window",
+    "difficulty": "medium",
+    "prompt": "Analyze only “Emit maxima from an index deque” as specified in the method reveal. Choose the tightest worst-case running-time and auxiliary-space pair.",
+    "constraints": [
+      "Deque operations at either end take constant amortized time; include all deque storage and exclude the input and required n-k+1 output entries.",
+      "Integer comparison and random access are unit cost. No packet slices are copied; the iterative call stack is constant. No hashing is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-0",
+          "text": "O(n) time, O(k) auxiliary space"
+        },
+        {
+          "optionId": "pair-1",
+          "text": "O(nk) time, O(k) auxiliary space"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "O(n log k) time, O(k) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "A monotone deque performs linear total work and stores at most k indices.",
+      "details": [
+        "Every index enters the deque once and leaves at most once, giving O(n) total work. The active deque contains at most k indices, so auxiliary space is O(k), excluding the required output array. Equal older values can be removed because the newer copy expires later.",
+        "Time: O(n).",
+        "Auxiliary space: O(k).",
+        "“O(nk) time, O(k) auxiliary space”: The deque reuses surviving maxima candidates; it never scans all k packet entries for each output.",
+        "“O(n) time, O(1) auxiliary space”: A decreasing packet can retain k candidate indices in the auxiliary deque; excluding output does not exclude those indices.",
+        "“O(n log k) time, O(k) auxiliary space”: A deque does not repair a balanced tree or heap after each insertion; total pops are charged once per index."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "The deque reuses surviving maxima candidates; it never scans all k packet entries for each output."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-2",
+          "text": "A decreasing packet can retain k candidate indices in the auxiliary deque; excluding output does not exclude those indices."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "A deque does not repair a balanced tree or heap after each insertion; total pops are charged once per index."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "decreasing-index-deque",
+  "methodReveal": {
+    "title": "Emit maxima from an index deque",
+    "description": "Maintain a deque of indices with strictly decreasing values. For each right index expire indices less than right-k+1, pop back indices whose values are no greater than the incoming value, append right, and emit the front value once k entries are available. Use deque ends without shifting."
+  }
+}

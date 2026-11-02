@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b18-21",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "backtracking",
+  "requiredFamilyIds": [
+    "backtracking"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b18-21-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "backtracking_base_case_and_result_contract",
+    "prompt": "Wildcard Allocations\n\nA pattern consists of lowercase literal characters and * symbols. Each * matches any contiguous substring of text, including empty, and literals match themselves. Return every vector of lengths consumed by the stars, in left-to-right star order, that makes the whole pattern match the whole text. Distinct length vectors are distinct answers even if stars consume identical characters.\n\nExamples:\npattern=\"*a*\", text=\"aa\" -> [[0,1],[1,0]].\npattern=\"**\", text=\"x\" -> [[0,1],[1,0]].\npattern=\"b\", text=\"a\" -> [].\npattern=\"*\", text=\"\" -> [[0]].\n\nConstraints: 1 <= P=pattern.length <= 12; 0 <= N=text.length <= 16. Lowercase text; pattern has at most six stars. Empty text is allowed.",
+    "constraints": [],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "acm-b18-21-search",
+          "text": "For each star try all possible consumed lengths, including zero, and always advance past that star. Match literals exactly and emit only when both inputs are exhausted.",
+          "grade": "correct",
+          "feedback": "Each length vector determines exactly where the literals must match. Advancing the pattern even for length zero prevents a nonprogressing recursion and gives each allocation one branch."
+        },
+        {
+          "optionId": "B",
+          "approachId": "acm-b18-21-alternative-1",
+          "text": "Merge adjacent stars before searching and return one length entry for each merged run.",
+          "grade": "incorrect",
+          "feedback": "For pattern=\"**\", text=\"x\", the required answers [0,1] and [1,0] are different allocations and cannot be merged."
+        },
+        {
+          "optionId": "C",
+          "approachId": "acm-b18-21-alternative-2",
+          "text": "For a zero-length star choice recurse at the same pattern and text indices.",
+          "grade": "incorrect",
+          "feedback": "For pattern=\"*\", text=\"\", this repeats the same state forever instead of returning [[0]]."
+        },
+        {
+          "optionId": "D",
+          "approachId": "acm-b18-21-extra-work",
+          "text": "Materialize the actual consumed substring for every star trial, store those strings along the path, and convert completed paths to length vectors.",
+          "grade": "partial",
+          "feedback": "This returns the right vectors, but copying star substrings is unnecessary because only lengths and indices are needed."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Each length vector determines exactly where the literals must match. Advancing the pattern even for length zero prevents a nonprogressing recursion and gives each allocation one branch.",
+      "details": [
+        "Scan the pattern once to count its stars. Carry pattern index i and text index j. A literal advances both if equal. At a star try each length from zero through N-j, append it, recurse with i+1 and j+length, then undo. At pattern end copy the length vector only if j=N.",
+        "Each star chooses its consumed length, including zero, while literals consume exactly one matching character. Different star allocations are distinct requested outputs even when they describe the same text match. Accept only joint exhaustion.",
+        "“For each star try all possible consumed lengths, including zero, and always advance past that star. Match literals exactly and emit only when both inputs are exhausted.”: Each length vector determines exactly where the literals must match. Advancing the pattern even for length zero prevents a nonprogressing recursion and gives each allocation one branch.",
+        "“Merge adjacent stars before searching and return one length entry for each merged run.”: For pattern=\"**\", text=\"x\", the required answers [0,1] and [1,0] are different allocations and cannot be merged.",
+        "“For a zero-length star choice recurse at the same pattern and text indices.”: For pattern=\"*\", text=\"\", this repeats the same state forever instead of returning [[0]].",
+        "“Materialize the actual consumed substring for every star trial, store those strings along the path, and convert completed paths to length vectors.”: This returns the right vectors, but copying star substrings is unnecessary because only lengths and indices are needed."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b18-21-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "backtracking_base_case_and_result_contract",
+    "prompt": "Analyze `acm-b18-21-search` only. Let V count all calls and C all star-length trials. Let R be the total entries copied into returned length vectors; copying an empty vector costs one operation per accepted leaf. Use indices only, never slice text or hash strings. Choose the tightest stated time and auxiliary-space pair. Count recursion and mutable working state; exclude supplied input and returned output storage, but include copying work in time. Primitive integer/index operations and preallocated-array updates cost constant time; dynamic appends are amortized constant time. No hashing is used unless explicitly stated.",
+    "constraints": [],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(P + V + C + R) time, O(P) auxiliary space"
+        },
+        {
+          "optionId": "cost-0",
+          "text": "O(P+N+R) time, O(P) auxiliary space"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(P + V + C + R) time, O(N·P) auxiliary space"
+        },
+        {
+          "optionId": "cost-2",
+          "text": "O(N·C + P + R) time, O(P) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Count star-length trials and copied allocation vectors after one pattern scan.",
+      "details": [
+        "Reading the pattern once costs P. Each call has constant overhead, each star-length trial updates constant-size state, and output copying adds R. Empty-vector leaf overhead is included in V.",
+        "Pattern position strictly increases on each call, so depth is at most P+1 and the length path has at most P entries. The method does not store text slices.",
+        "Let V count all calls and C all star-length trials. Let R be the total entries copied into returned length vectors; copying an empty vector costs one operation per accepted leaf. Use indices only, never slice text or hash strings.",
+        "“O(P+N+R) time, O(P) auxiliary space”: Multiple star-length choices can create many recursive calls even for a short pattern.",
+        "“O(P + V + C + R) time, O(N·P) auxiliary space”: No text substring is stored in a recursion frame.",
+        "“O(N·C + P + R) time, O(P) auxiliary space”: Indices avoid copying up to N characters at each star trial."
+      ]
+    }
+  },
+  "analyzedApproachId": "acm-b18-21-search",
+  "methodReveal": {
+    "title": "Advance past each wildcard choice",
+    "description": "Scan the pattern once to count its stars. Carry pattern index i and text index j. A literal advances both if equal. At a star try each length from zero through N-j, append it, recurse with i+1 and j+length, then undo. At pattern end copy the length vector only if j=N."
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-05",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals"
+  ],
+  "difficulty": "easy",
+  "approachQuestion": {
+    "questionId": "acm-b11-05-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "merge_overlaps",
+    "difficulty": "easy",
+    "prompt": "Available recording time\n\nA studio is open during the half-open horizon [L,R). It receives n half-open reservation intervals [start,end), in nondecreasing order of start. Reservations can overlap, nest, repeat, or extend outside the horizon. Return the total length of time inside [L,R) that is not reserved by any reservation. Return one integer, not a list of gaps. Do not modify the input.\n\nInput: L = 10, R = 25, reservations = [[5,12],[11,14],[18,21],[20,30]]\nOutput: 4\nOnly [14,18) is free.\n\nInput: L = 3, R = 9, reservations = [[0,2],[10,12]]\nOutput: 6\n\nConstraints: 0 ≤ n ≤ 200000; 0 ≤ L < R ≤ 1000000000; reservation endpoints are integers with 0 ≤ start < end ≤ 1000000000. Indexed reads are available. Choose the method with the best worst-case running time, then least auxiliary memory. Duplicate reservations do not reserve time twice.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "clipped-frontier-gaps",
+          "text": "Set cursor=L and free=0. Read reservations in order, clipping each to the horizon and skipping empty clips. If a clipped start exceeds cursor, add start−cursor. Update cursor to the larger of cursor and the clipped end. Finally add R−cursor.",
+          "grade": "correct",
+          "feedback": "The cursor never moves backwards, so overlapping or nested reservations cannot count covered time twice. Clipping ensures all measured gaps lie in the horizon."
+        },
+        {
+          "optionId": "B",
+          "approachId": "materialize-clipped-union",
+          "text": "Clip reservations, discard empty clips, and build a temporary list of their merged union in order. Sum its lengths and subtract from R−L.",
+          "grade": "partial",
+          "feedback": "The union calculation is correct for every valid input. But only a scalar answer is required; the merged list can be replaced with a running frontier and free total."
+        },
+        {
+          "optionId": "C",
+          "approachId": "subtract-each-duration",
+          "text": "Clip every reservation to the horizon, sum all nonempty clipped durations, and subtract that sum from R−L.",
+          "grade": "incorrect",
+          "feedback": "Overlaps are subtracted repeatedly. For horizon [0,10) and reservations [[1,6],[4,8]], this returns 1, but the union reserves 7 units and the correct free length is 3."
+        },
+        {
+          "optionId": "D",
+          "approachId": "assign-last-end",
+          "text": "Use the cursor-and-gap scan, but after every nonempty clip assign cursor to that clip’s end rather than taking the larger end.",
+          "grade": "incorrect",
+          "feedback": "A nested interval can move the cursor backwards. For horizon [0,12) and reservations [[1,10],[2,3]], this reports 10 free units instead of 3: it forgets coverage from 3 to 10."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Measure the complement of covered time with a monotone frontier, without materializing the union.",
+      "details": [
+        "Initialize cursor to L and free to zero. For each reservation, calculate its clipped start and end in local variables. Skip empty clips, add any gap before the clip, and move cursor to the greater of its current value and the clipped end. After the last reservation, add R−cursor. Do not create a clipped or merged array.",
+        "Clip reservations to [L,R] before measuring free gaps. The cursor tracks the furthest covered end, so overlapping reservations do not move it backward or double-subtract coverage. Include the final gap through R.",
+        "“Set cursor=L and free=0. Read reservations in order, clipping each to the horizon and skipping empty clips. If a clipped start exceeds cursor, add start−cursor. Update cursor to the larger of cursor and the clipped end. Finally add R−cursor.”: The cursor never moves backwards, so overlapping or nested reservations cannot count covered time twice. Clipping ensures all measured gaps lie in the horizon.",
+        "“Clip reservations, discard empty clips, and build a temporary list of their merged union in order. Sum its lengths and subtract from R−L.”: The union calculation is correct for every valid input. But only a scalar answer is required; the merged list can be replaced with a running frontier and free total.",
+        "“Clip every reservation to the horizon, sum all nonempty clipped durations, and subtract that sum from R−L.”: Overlaps are subtracted repeatedly. For horizon [0,10) and reservations [[1,6],[4,8]], this returns 1, but the union reserves 7 units and the correct free length is 3.",
+        "“Use the cursor-and-gap scan, but after every nonempty clip assign cursor to that clip’s end rather than taking the larger end.”: A nested interval can move the cursor backwards. For horizon [0,12) and reservations [[1,10],[2,3]], this reports 10 free units instead of 3: it forgets coverage from 3 to 10."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-05-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "merge_overlaps",
+    "difficulty": "easy",
+    "prompt": "For clipped-frontier-gaps, n is the number of supplied reservations. The method scans the entire list even if the horizon has already been covered. Choose the tightest standard worst-case time and auxiliary-space pair.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(n log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O(n), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O(n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(R−L+n), auxiliary space O(R−L)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-2"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Clip every supplied reservation once without building an intermediate union.",
+      "details": [
+        "Every reservation is clipped and compared once, with constant work. Cursor, the accumulated free length and the current clipped endpoints are the only state. No sorting, per-time-unit array, temporary union, input copy or recursive stack is needed. Empty input takes constant time.",
+        "Time: O(n).",
+        "Auxiliary space: O(1).",
+        "Already start-sorted input; full iterative scan; scalar result; no coordinate enumeration.",
+        "“Time O(n log n), auxiliary space O(n)”: No sorting is performed: the supplied reservations are already start-sorted. The scan uses only scalar state.",
+        "“Time O(n), auxiliary space O(n)”: Neither a clipped array nor a merged union is built. Only the frontier, free total and current endpoints are stored.",
+        "“Time O(R−L+n), auxiliary space O(R−L)”: Coordinates are never enumerated. Each input interval triggers a constant number of operations regardless of the horizon length."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "No sorting is performed: the supplied reservations are already start-sorted. The scan uses only scalar state."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "Neither a clipped array nor a merged union is built. Only the frontier, free total and current endpoints are stored."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-4",
+          "text": "Coordinates are never enumerated. Each input interval triggers a constant number of operations regardless of the horizon length."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "clipped-frontier-gaps",
+  "methodReveal": {
+    "title": "Analyze clipped-frontier-gaps",
+    "description": "Initialize cursor to L and free to zero. For each reservation, calculate its clipped start and end in local variables. Skip empty clips, add any gap before the clip, and move cursor to the greater of its current value and the clipped end. After the last reservation, add R−cursor. Do not create a clipped or merged array."
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-10",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-10-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_representation",
+    "difficulty": "medium",
+    "prompt": "Who can report to the archive? A directed graph represents allowed one-way forwarding steps. Given one archive vertex a, return a boolean array canReport with canReport[v]=true exactly when a directed path from v to a exists, including a itself. The graph may have cycles and disconnected regions.\n\nInput: read-only outgoing adjacency lists for IDs 0..V-1, 1 <= V <= 200000, 0 <= E <= 400000, no duplicate edges or self-loops.\n\nExample: lists=[[1],[2],[],[1],[]], a=2, output=[true,true,true,true,false].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "reverse-search",
+          "text": "Build incoming adjacency lists by reversing every edge. Traverse from a in that reversed graph and mark every reached vertex true in the output.",
+          "grade": "correct",
+          "feedback": "A route from v to a in the original graph becomes a route from a to v when every edge is reversed. One traversal therefore answers all starting vertices together."
+        },
+        {
+          "optionId": "B",
+          "approachId": "search-each-start",
+          "text": "For every v, run a fresh directed reachability traversal from v to a and fill its output entry.",
+          "grade": "partial",
+          "feedback": "Every individual reachability answer is correct, including cycles when a visited set is used. But many starts revisit the same routes; reversing the graph enables one shared traversal."
+        },
+        {
+          "optionId": "C",
+          "approachId": "forward-from-archive",
+          "text": "Traverse the supplied outgoing lists from a and mark reached vertices true.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[]], a=1, vertex 0 can reach the archive but is not reachable from it. Forward exploration answers the opposite question."
+        },
+        {
+          "optionId": "D",
+          "approachId": "make-undirected",
+          "text": "Ignore directions and traverse the resulting undirected graph from a.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[]], a=0, the undirected search marks 1 true although 1 has no outgoing route to 0. Reversing every direction is different from allowing both directions."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "When many sources share a single destination, reversing the relation converts the query into one ordinary reachability traversal.",
+      "details": [
+        "Construct a compact reversed adjacency representation: count incoming edges, prefix-sum offsets into one edge array, then fill that array with the source IDs. Initialize canReport to false, mark a and push it onto an explicit stack. Follow incoming neighbors, marking before pushing. Return canReport. Retain the reversed representation until completion.",
+        "A vertex can reach archive a in the original graph exactly when a reaches it through reversed edges. Build that reverse representation explicitly; its edge array is new auxiliary storage, unlike the supplied original adjacency lists.",
+        "“Build incoming adjacency lists by reversing every edge. Traverse from a in that reversed graph and mark every reached vertex true in the output.”: A route from v to a in the original graph becomes a route from a to v when every edge is reversed. One traversal therefore answers all starting vertices together.",
+        "“For every v, run a fresh directed reachability traversal from v to a and fill its output entry.”: Every individual reachability answer is correct, including cycles when a visited set is used. But many starts revisit the same routes; reversing the graph enables one shared traversal.",
+        "“Traverse the supplied outgoing lists from a and mark reached vertices true.”: For lists=[[1],[]], a=1, vertex 0 can reach the archive but is not reachable from it. Forward exploration answers the opposite question.",
+        "“Ignore directions and traverse the resulting undirected graph from a.”: For lists=[[1],[]], a=0, the undirected search marks 1 true although 1 has no outgoing route to 0. Reversing every direction is different from allowing both directions."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-10-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_representation",
+    "difficulty": "medium",
+    "prompt": "Analyze reverse-search exactly as revealed. V counts vertices and E directed edges. Build reversed adjacency in preallocated offset, count/cursor and edge arrays using two scans of the supplied edges. Use a preallocated V-entry explicit stack; indexing and stack operations take constant time. No hashing, recursion, shifting, amortized growth, or other copies are used. Count building time. Exclude the original input and returned canReport array from auxiliary space, but include the reversed graph and construction scratch arrays.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Reverse-edge construction and one traversal cost vertex-plus-edge work and storage.",
+      "details": [
+        "The option “O(V + E) time, O(V + E) auxiliary space” is tight: constructing reverse offsets and edges takes O(V+E), then one traversal scans at most V vertices and E reversed edges. The retained reverse edge array occupies E slots, while offsets, scratch arrays and stack use O(V). The option “O(V + E) time, O(V) auxiliary space” overlooks the reversed edges, which are not supplied input. The option “O(V(V + E)) time, O(V) auxiliary space” describes separate source searches. The option “O(V + E) time, O(1) auxiliary space” excludes working structures as though they were all output; only canReport is excluded.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V + E)."
+      ]
+    }
+  },
+  "analyzedApproachId": "reverse-search",
+  "methodReveal": {
+    "title": "Traverse incoming edges from the destination",
+    "description": "Construct a compact reversed adjacency representation: count incoming edges, prefix-sum offsets into one edge array, then fill that array with the source IDs. Initialize canReport to false, mark a and push it onto an explicit stack. Follow incoming neighbors, marking before pushing. Return canReport. Retain the reversed representation until completion."
+  }
+}

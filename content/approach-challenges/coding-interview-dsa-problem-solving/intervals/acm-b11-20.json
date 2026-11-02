@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-20",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals",
+    "sorting_based",
+    "heap_priority_queue"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b11-20-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "detect_overlap",
+    "difficulty": "hard",
+    "prompt": "Smallest warranty covering each reading\n\nEach of n warranty records covers a closed integer serial-number range [start,end]. For each of q serial-number queries x, return the smallest range length end−start+1 among records containing x, or −1 if none do. Records and queries are unsorted and immutable. All queries are available before answering, and results must be returned in original query order.\n\nInput: records=[[1,10],[4,6],[8,9]], queries=[5,8,11,5]\nOutput: [3,2,-1,3]\n\nInput: records=[[2,2]], queries=[2,3]\nOutput: [1,-1]\n\nConstraints: 1 ≤ n,q ≤ 200000; integer endpoints satisfy 0 ≤ start ≤ end ≤ 1000000000; query values are in the same coordinate range. Use comparison-based sorting and priority queues. Choose the best worst-case time among the listed methods.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "offline-shortest-active",
+          "text": "Sort copied records by start and indexed query copies by x. For each query in order, insert all records with start ≤ x into a min-heap keyed by length. While the heap minimum ends before x, remove it. Return the minimum length or −1, storing it at the query’s original index.",
+          "grade": "correct",
+          "feedback": "All eligible starts have entered the heap. Expired nonminimum records may remain, but cannot spoil the answer: an expired record is removed if it reaches the minimum, and any valid minimum is no longer than every other candidate."
+        },
+        {
+          "optionId": "B",
+          "approachId": "earliest-end-active",
+          "text": "Use the ordered query sweep but keep records in a heap keyed only by end; after dropping expired minima, return the length of the earliest-ending record.",
+          "grade": "incorrect",
+          "feedback": "For records [[0,5],[4,6]] and query 4, earliest end chooses length 6, but the range [4,6] has the smaller length 3."
+        },
+        {
+          "optionId": "C",
+          "approachId": "never-expire",
+          "text": "Use a length heap and insert by start during the query sweep, but never remove records whose end is before the current query.",
+          "grade": "incorrect",
+          "feedback": "For records [[1,1],[0,10]] and queries [1,5], the singleton is valid only for the first query. Keeping it returns 1 instead of 11 for query 5."
+        },
+        {
+          "optionId": "D",
+          "approachId": "scan-all-records",
+          "text": "For every query, test every record for containment and take the minimum length of the containing records.",
+          "grade": "incorrect",
+          "feedback": "This is correct but repeats all record checks for every query. Offline ordering lets starts be added once and expired candidates be discarded lazily."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Maintain the smallest active covering interval with an offline sweep and safe lazy expiration.",
+      "details": [
+        "Copy records and indexed queries, sort each by its sweep coordinate using iterative bottom-up merge sort and reusable buffers. Use an iterative binary heap keyed by (length,end), preallocated for n records. Each record is inserted once and removed at most once. Store answers in the returned array.",
+        "Insert warranties once their start is at or before the query. Remove expired heap tops before answering; an expired non-top can wait until it reaches the top. Scatter answers back using original query indices.",
+        "“Sort copied records by start and indexed query copies by x. For each query in order, insert all records with start ≤ x into a min-heap keyed by length. While the heap minimum ends before x, remove it. Return the minimum length or −1, storing it at the query’s original index.”: All eligible starts have entered the heap. Expired nonminimum records may remain, but cannot spoil the answer: an expired record is removed if it reaches the minimum, and any valid minimum is no longer than every other candidate.",
+        "“Use the ordered query sweep but keep records in a heap keyed only by end; after dropping expired minima, return the length of the earliest-ending record.”: For records [[0,5],[4,6]] and query 4, earliest end chooses length 6, but the range [4,6] has the smaller length 3.",
+        "“Use a length heap and insert by start during the query sweep, but never remove records whose end is before the current query.”: For records [[1,1],[0,10]] and queries [1,5], the singleton is valid only for the first query. Keeping it returns 1 instead of 11 for query 5.",
+        "“For every query, test every record for containment and take the minimum length of the containing records.”: This is correct but repeats all record checks for every query. Offline ordering lets starts be added once and expired candidates be discarded lazily."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-20-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "detect_overlap",
+    "difficulty": "hard",
+    "prompt": "For offline-shortest-active, include all sorting, heap operations and query scans. Count record/query copies, buffers and heap, but exclude the returned q answers. Choose the tightest standard worst-case pair in n,q.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(nq), auxiliary space O(n+q)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O((n+q) log(n+q)), auxiliary space O(n+q)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O((n+q) log(n+q)), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(n+q), auxiliary space O(n+q)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-2"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Sort records and queries; each record enters and leaves the heap at most once.",
+      "details": [
+        "Two sorts require O(n log n+q log q), which is O((n+q) log(n+q)). At most n insertions and n removals each cost O(log n), and queries add linear scanning work. Copies and sorting buffers total O(n+q), and the heap uses O(n). Preallocated iterative structures avoid amortization and recursion assumptions.",
+        "Time: O((n+q) log(n+q)).",
+        "Auxiliary space: O(n+q).",
+        "Offline indexed query sort; iterative comparison merge sorts and binary heap; returned answers excluded.",
+        "“Time O(nq), auxiliary space O(n+q)”: All record-query pairs are not tested. The sweep inserts each record once and lazily removes it at most once.",
+        "“Time O((n+q) log(n+q)), auxiliary space O(n)”: The indexed query copy and its merge buffer each depend on q. Excluding the returned answers does not exclude these separate working arrays.",
+        "“Time O(n+q), auxiliary space O(n+q)”: Comparison sorting and heap updates are required; the linear sweep alone omits those costs."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "All record-query pairs are not tested. The sweep inserts each record once and lazily removes it at most once."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "The indexed query copy and its merge buffer each depend on q. Excluding the returned answers does not exclude these separate working arrays."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-4",
+          "text": "Comparison sorting and heap updates are required; the linear sweep alone omits those costs."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "offline-shortest-active",
+  "methodReveal": {
+    "title": "Analyze offline-shortest-active",
+    "description": "Copy records and indexed queries, sort each by its sweep coordinate using iterative bottom-up merge sort and reusable buffers. Use an iterative binary heap keyed by (length,end), preallocated for n records. Each record is inserted once and removed at most once. Store answers in the returned array."
+  }
+}

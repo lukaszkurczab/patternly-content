@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-14",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-14-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "visited_state_and_cycles",
+    "difficulty": "medium",
+    "prompt": "A redundant physical loop. An undirected simple graph represents cables between devices. Return true if it contains a cycle: a closed route using at least three distinct vertices before returning to its start. A disconnected region can contain the only cycle.\n\nInput: read-only adjacency lists for IDs 0..V-1; 1 <= V <= 200000 and 0 <= E <= 400000. Each cable appears at both endpoints, with no self-loops or parallel edges. Output one boolean.\n\nExample 1: lists=[[1],[0],[]], output=false: the two entries describe one cable, not a cycle.\nExample 2: lists=[[],[2,3],[1,3],[1,2]], output=true.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "parent-aware-forest",
+          "text": "Traverse every unvisited component with an explicit stack, marking vertices when pushed and recording a parent. On an edge to an already visited vertex other than the current vertex’s parent, report a cycle.",
+          "grade": "correct",
+          "feedback": "The reverse entry of a tree edge is expected and must be ignored. Any other edge between discovered vertices closes a cycle in an undirected simple graph; the forest covers disconnected components."
+        },
+        {
+          "optionId": "B",
+          "approachId": "parent-aware-bfs",
+          "text": "Use a BFS forest with one visited array and parent per vertex. Reject the reverse edge to the parent; report a cycle on any other edge to a visited vertex.",
+          "grade": "correct",
+          "feedback": "The same tree-edge distinction works with queue order. Every component is examined and the resource bounds match the stack implementation."
+        },
+        {
+          "optionId": "C",
+          "approachId": "visited-edge-only",
+          "text": "Report a cycle whenever a traversal sees an edge whose other endpoint is already visited, including the parent.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[0]], exploration from 0 reaches 1, then sees the reverse entry 1->0 and falsely reports a cycle. It is just one undirected cable."
+        },
+        {
+          "optionId": "D",
+          "approachId": "search-from-zero",
+          "text": "Use a correct parent-aware cycle traversal, but start only at vertex 0 and return false if that component has no cycle.",
+          "grade": "incorrect",
+          "feedback": "Example 2 has an isolated vertex 0 and a cycle among 1,2,3. Testing one component misses a legal cycle elsewhere."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "For an undirected graph, the parent edge is not evidence of a cycle. This differs from testing active-route back edges in a directed graph.",
+      "details": [
+        "Initialize visited and parent arrays and scan all roots. For each unvisited root, assign a sentinel parent, mark and push it. Pop u and inspect its neighbors. Mark and push an unseen v with parent[v]=u. If v is already visited and v is not parent[u], return true. Return false after every component has been exhausted.",
+        "The edge back to a DFS parent is the same undirected connection, not evidence of a cycle. Any other already visited neighbor closes a loop under the simple-graph contract. Search every component.",
+        "“Traverse every unvisited component with an explicit stack, marking vertices when pushed and recording a parent. On an edge to an already visited vertex other than the current vertex’s parent, report a cycle.”: The reverse entry of a tree edge is expected and must be ignored. Any other edge between discovered vertices closes a cycle in an undirected simple graph; the forest covers disconnected components.",
+        "“Use a BFS forest with one visited array and parent per vertex. Reject the reverse edge to the parent; report a cycle on any other edge to a visited vertex.”: The same tree-edge distinction works with queue order. Every component is examined and the resource bounds match the stack implementation.",
+        "“Report a cycle whenever a traversal sees an edge whose other endpoint is already visited, including the parent.”: For lists=[[1],[0]], exploration from 0 reaches 1, then sees the reverse entry 1->0 and falsely reports a cycle. It is just one undirected cable.",
+        "“Use a correct parent-aware cycle traversal, but start only at vertex 0 and return false if that component has no cycle.”: Example 2 has an isolated vertex 0 and a cycle among 1,2,3. Testing one component misses a legal cycle elsewhere."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-14-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "visited_state_and_cycles",
+    "difficulty": "medium",
+    "prompt": "Analyze parent-aware-forest. V counts vertices and E simple undirected edges stored twice. Preallocate V-entry visited and parent arrays and a V-slot stack; initialize arrays and scan all roots. Indexing and push/pop take constant time. No hashing, recursion, shifting, amortized growth, or copying is used. Exclude input and scalar output; include working arrays and stack. Use worst case without an early cycle.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each vertex is scheduled once and both stored directions of each cable are inspected.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: each vertex is pushed once, each of 2E adjacency entries is checked once, and arrays/root scans cost V. Parents, marks and stack use O(V). The option “O(V + E) time, O(1) auxiliary space” omits them. C unnecessarily repeats traversal from every vertex instead of retaining marks. The option “O(V + E) time, O(V + E) auxiliary space” counts edge copies although the supplied lists are directly inspected.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "parent-aware-forest",
+  "methodReveal": {
+    "title": "Ignore only the reverse tree edge",
+    "description": "Initialize visited and parent arrays and scan all roots. For each unvisited root, assign a sentinel parent, mark and push it. Pop u and inspect its neighbors. Mark and push an unseen v with parent[v]=u. If v is already visited and v is not parent[u], return true. Return false after every component has been exhausted."
+  }
+}

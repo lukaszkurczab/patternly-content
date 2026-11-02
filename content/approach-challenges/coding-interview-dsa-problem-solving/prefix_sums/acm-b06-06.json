@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b06-06",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "prefix_sums",
+  "requiredFamilyIds": [
+    "prefix_sums"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "prefix_sums",
+    "mentalUnitId": "answer_range_queries",
+    "difficulty": "hard",
+    "questionId": "acm-b06-06-q1",
+    "prompt": "Distance-weighted ledger. A fixed read-only array a has n signed entries. Each of q inclusive requests [l,r] asks for a[l] + 2*a[l+1] + ... + (r-l+1)*a[r]. Return the q answers in request order; weights restart at 1 for every request.\n\nInput: a=[4,-2,5,1], requests [[1,3],[0,1]]. Output: [11,0]. The first total is -2 + 2*5 + 3*1.\n\nConstraints: 1 ≤ n,q ≤ 200000; -1000 ≤ a[i] ≤ 1000. Every request has 0 ≤ l ≤ r < n, with zero-based indices. No updates occur. All intermediate totals and answers fit signed 64-bit integers.\n\nWhich approach handles the complete task correctly and efficiently?",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "two-moments",
+          "text": "Build P[k]=sum of a[i] for i<k and W[k]=sum of (i+1)*a[i] for i<k, both starting at zero. Return W[r+1]-W[l] - l*(P[r+1]-P[l]).",
+          "grade": "correct",
+          "feedback": "Global weight i+1 becomes local weight i-l+1 after subtracting l copies of the unweighted range total."
+        },
+        {
+          "optionId": "B",
+          "approachId": "global-weights",
+          "text": "Build W of globally weighted totals and return W[r+1]-W[l].",
+          "grade": "incorrect",
+          "feedback": "Weights must restart at l. For a=[4,-2,5,1] and [1,3], global weights give 15 instead of 11."
+        },
+        {
+          "optionId": "C",
+          "approachId": "multiply-total",
+          "text": "Build ordinary cumulative totals and return (r-l+1)*(P[r+1]-P[l]).",
+          "grade": "incorrect",
+          "feedback": "This gives every entry the same weight. For [1,2] on a=[1,2,3], it returns 10 instead of 8."
+        },
+        {
+          "optionId": "D",
+          "approachId": "walk-weighted",
+          "text": "For each request walk its positions, multiply by successive weights starting at 1, and add.",
+          "grade": "incorrect",
+          "feedback": "This computes the right value but repeats the weighting work for every overlapping request. Two reusable summaries remove those repeated traversals."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Build both ordinary cumulative totals and totals weighted by the global one-based index. Obtain each range from both summaries. Subtract the left index times its unweighted total from its globally weighted total to restart weights at one.",
+      "details": [
+        "Build both ordinary cumulative totals and totals weighted by the global one-based index. Obtain each range from both summaries. Subtract the left index times its unweighted total from its globally weighted total to restart weights at one.",
+        "Global weights at indices left..right are left+1..right+1. Subtract left times the ordinary range sum to change them into local weights 1..length. One unweighted summary cannot recover this distance-weighted total.",
+        "“Build P[k]=sum of a[i] for i<k and W[k]=sum of (i+1)*a[i] for i<k, both starting at zero. Return W[r+1]-W[l] - l*(P[r+1]-P[l]).”: Global weight i+1 becomes local weight i-l+1 after subtracting l copies of the unweighted range total.",
+        "“Build W of globally weighted totals and return W[r+1]-W[l].”: Weights must restart at l. For a=[4,-2,5,1] and [1,3], global weights give 15 instead of 11.",
+        "“Build ordinary cumulative totals and return (r-l+1)*(P[r+1]-P[l]).”: This gives every entry the same weight. For [1,2] on a=[1,2,3], it returns 10 instead of 8.",
+        "“For each request walk its positions, multiply by successive weights starting at 1, and add.”: This computes the right value but repeats the weighting work for every overlapping request. Two reusable summaries remove those repeated traversals."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "prefix_sums",
+    "mentalUnitId": "answer_range_queries",
+    "difficulty": "hard",
+    "questionId": "acm-b06-06-q2",
+    "prompt": "Analyze only the method in the reveal. Choose its tightest worst-case time and worst-case auxiliary-space pair. 64-bit addition, subtraction, multiplication and indexing take constant time. Include both allocated summaries; exclude input arrays and the required q-answer output.",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "p0",
+          "text": "O(n + q) time; O(n) auxiliary space"
+        },
+        {
+          "optionId": "p1",
+          "text": "O(nq) time; O(1) auxiliary space"
+        },
+        {
+          "optionId": "p2",
+          "text": "O(n + q) time; O(1) auxiliary space"
+        },
+        {
+          "optionId": "p3",
+          "text": "O(n log n + q) time; O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "p0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Two prepared arrays answer each weighted request with fixed arithmetic.",
+      "details": [
+        "Two arrays are built in one pass; each answer uses a fixed number of arithmetic operations and array accesses.",
+        "64-bit addition, subtraction, multiplication and indexing take constant time. Include both allocated summaries; exclude input arrays and the required q-answer output.",
+        "Two n+1 arrays require O(n) space. The iterative method uses constant loop state, no recursion, and no copy of a or the requests.",
+        "Direct weighting requires O(nq) worst-case time with O(1) working space. A single globally weighted summary fails when l is nonzero; a single unweighted total loses positional information."
+      ]
+    }
+  },
+  "analyzedApproachId": "two-moments",
+  "methodReveal": {
+    "title": "Shift global weights to the requested origin",
+    "description": "Build both ordinary cumulative totals and totals weighted by the global one-based index. Obtain each range from both summaries. Subtract the left index times its unweighted total from its globally weighted total to restart weights at one."
+  }
+}

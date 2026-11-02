@@ -14,20 +14,21 @@ const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const TRACK = "coding-interview-dsa-problem-solving";
 const TAXONOMY_FAMILY_IDS = new Set(Object.keys(APPROACH_CHALLENGE_FAMILY_COUNTS));
 
-test("approach challenge registry aggregates exact 36/72 source with six Free pairs", async () => {
+test("approach challenge registry aggregates exact 472/944 source with 16 fully-contained Free pairs", async () => {
   const bank = await loadApproachChallengeBank({ rootDirectory: ROOT, taxonomyFamilyIds: TAXONOMY_FAMILY_IDS });
-  assert.equal(bank.problemCount, 36);
-  assert.equal(bank.questionCount, 72);
-  assert.equal(bank.freeProblemCount, 6);
-  assert.equal(bank.premiumProblemCount, 30);
+  assert.equal(bank.problemCount, 472);
+  assert.equal(bank.questionCount, 944);
+  assert.equal(bank.freeProblemCount, 16);
+  assert.equal(bank.premiumProblemCount, 456);
   assert.deepEqual(bank.familyCounts, APPROACH_CHALLENGE_FAMILY_COUNTS);
-  assert.equal(new Set(bank.problems.map(({ problemId }) => problemId)).size, 36);
-  assert.equal(new Set(bank.problems.flatMap(({ approachQuestion, complexityQuestion }) => [approachQuestion.questionId, complexityQuestion.questionId])).size, 72);
+  assert.equal(new Set(bank.problems.map(({ problemId }) => problemId)).size, 472);
+  assert.equal(new Set(bank.problems.flatMap(({ approachQuestion, complexityQuestion }) => [approachQuestion.questionId, complexityQuestion.questionId])).size, 944);
   assert.deepEqual(bank.problems.map(({ problemId }) => problemId), [...bank.problems.map(({ problemId }) => problemId)].sort());
   assert.ok(bank.problems.slice(0, 6).every(({ primaryFamilyId, approachQuestion, complexityQuestion }) =>
     primaryFamilyId === "complexity_and_constraints" &&
     approachQuestion.nodeId === "complexity_and_constraints" &&
     complexityQuestion.nodeId === "complexity_and_constraints"));
+  assert.equal(bank.problems.filter((problem) => problem.primaryFamilyId === "complexity_and_constraints" && problem.requiredFamilyIds.length > 1).length, 10);
 });
 
 test("approach challenge registry rejects source bytes that differ from the accepted hash", async (t) => {

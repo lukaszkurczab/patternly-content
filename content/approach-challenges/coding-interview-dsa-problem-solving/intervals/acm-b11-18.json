@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-18",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals",
+    "binary_search",
+    "prefix_sums"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b11-18-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "interval_representation_and_endpoint_semantics",
+    "difficulty": "medium",
+    "prompt": "Metered travel inside many ranges\n\nAn immutable list of n half-open tolled road sections [start,end) is sorted by start and pairwise non-overlapping: end[i] ≤ start[i+1]. Each of q trip queries [a,b) asks for the total length of tolled road inside that trip. Queries are independent, unsorted, and all available up front. Return one length per query in original order. Toll rate is one per unit length; count length, not the number of sections.\n\nInput: sections=[[1,4],[6,9],[12,14]], trips=[[2,8],[4,12],[0,20]]\nOutput: [4,3,8]\nThe first trip covers 2 units in each of the first two sections.\n\nInput: sections=[[0,3],[3,5]], trips=[[3,3],[2,4]]\nOutput: [0,2]\n\nConstraints: 2 ≤ n ≤ 200000; 1 ≤ q ≤ 200000; all endpoints are integers between 0 and 1000000000; section start < end and query a ≤ b. Indexed reads are available. Among methods with best worst-case time for arbitrary n,q, avoid unnecessary storage. Preprocessing the sections is permitted.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "prefix-covered-length",
+          "text": "Precompute prefix sums of section lengths. Define F(x) as covered length strictly before coordinate x: binary-search the last section starting before x, use the prefix total of earlier sections and the clipped contribution of that section. Answer [a,b) as F(b)−F(a).",
+          "grade": "correct",
+          "feedback": "Non-overlap ensures every section before the candidate is fully before x and every later section contributes nothing. Prefix differences therefore subtract exactly the covered length before the trip starts."
+        },
+        {
+          "optionId": "B",
+          "approachId": "scan-sections-per-trip",
+          "text": "For each trip, scan all sections, sum the lengths of its nonempty intersections with them, and return that sum.",
+          "grade": "incorrect",
+          "feedback": "This returns correct lengths, but repeats every section scan for every query. A shared cumulative-length summary avoids repeated work across arbitrary queries."
+        },
+        {
+          "optionId": "C",
+          "approachId": "prefix-section-count",
+          "text": "Precompute counts of sections by position and answer each trip using the number of sections it intersects.",
+          "grade": "incorrect",
+          "feedback": "The required quantity is length. For sections [[0,10],[20,21]] and trip [2,8), the answer is 6, not one intersecting section."
+        },
+        {
+          "optionId": "D",
+          "approachId": "whole-contained-sections",
+          "text": "Use prefix lengths and binary searches, but sum only sections fully contained inside each trip.",
+          "grade": "incorrect",
+          "feedback": "Trips may cut a section. For sections [[0,10],[20,21]] and trip [2,8), this returns 0 instead of 6. Boundary sections must be clipped."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Combine interval boundary clipping with cumulative covered length to answer repeated range-measure queries.",
+      "details": [
+        "Build an array of n+1 prefix length totals in one pass. For each query, evaluate F twice using iterative binary search on starts, one prefix lookup, and at most one clipped-section contribution. Store answers directly in the returned q-element array; do not sort queries or copy sections.",
+        "F(x) measures occupied length before x, so F(right)-F(left) answers the requested range. A prefix total accounts for completed sections and one clipped section handles the boundary; arbitrary coordinate gaps require no per-unit iteration.",
+        "“Precompute prefix sums of section lengths. Define F(x) as covered length strictly before coordinate x: binary-search the last section starting before x, use the prefix total of earlier sections and the clipped contribution of that section. Answer [a,b) as F(b)−F(a).”: Non-overlap ensures every section before the candidate is fully before x and every later section contributes nothing. Prefix differences therefore subtract exactly the covered length before the trip starts.",
+        "“For each trip, scan all sections, sum the lengths of its nonempty intersections with them, and return that sum.”: This returns correct lengths, but repeats every section scan for every query. A shared cumulative-length summary avoids repeated work across arbitrary queries.",
+        "“Precompute counts of sections by position and answer each trip using the number of sections it intersects.”: The required quantity is length. For sections [[0,10],[20,21]] and trip [2,8), the answer is 6, not one intersecting section.",
+        "“Use prefix lengths and binary searches, but sum only sections fully contained inside each trip.”: Trips may cut a section. For sections [[0,10],[20,21]] and trip [2,8), this returns 0 instead of 6. Boundary sections must be clipped."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-18-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "interval_representation_and_endpoint_semantics",
+    "difficulty": "medium",
+    "prompt": "For prefix-covered-length, include preprocessing and all q queries. n≥2. Include the prefix array as auxiliary storage, but exclude the supplied sections and returned answers. Choose the tightest standard worst-case pair.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(nq), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O(n+q log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O(q log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(n+q), auxiliary space O(n+q)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-2"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Prepare n lengths, then perform two boundary searches per query.",
+      "details": [
+        "Building the prefix array costs O(n) time and memory. Two logarithmic binary searches per query total O(q log n); the boundary corrections are constant time. The prefix array remains the only growing auxiliary structure. The O(q log n) alternative omits preprocessing when n dominates; a direct scan repeats all sections.",
+        "Time: O(n+q log n).",
+        "Auxiliary space: O(n).",
+        "Sorted non-overlapping input; iterative binary searches; prefix construction counted; no query sort or section copy.",
+        "“Time O(nq), auxiliary space O(1)”: Scanning all sections for every query is a different method; prefix lookups and two binary searches answer each query.",
+        "“Time O(q log n), auxiliary space O(n)”: The prefix array must first be constructed by reading n section lengths. Omitting O(n) preprocessing is not a tight bound when n dominates.",
+        "“Time O(n+q), auxiliary space O(n+q)”: Arbitrary query endpoints each require binary searches in the specified method; no joint ordered sweep is used. Its only growing auxiliary array has n+1 prefix cells, not a copied query set."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "Scanning all sections for every query is a different method; prefix lookups and two binary searches answer each query."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "The prefix array must first be constructed by reading n section lengths. Omitting O(n) preprocessing is not a tight bound when n dominates."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-4",
+          "text": "Arbitrary query endpoints each require binary searches in the specified method; no joint ordered sweep is used. Its only growing auxiliary array has n+1 prefix cells, not a copied query set."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "prefix-covered-length",
+  "methodReveal": {
+    "title": "Analyze prefix-covered-length",
+    "description": "Build an array of n+1 prefix length totals in one pass. For each query, evaluate F twice using iterative binary search on starts, one prefix lookup, and at most one clipped-section contribution. Store answers directly in the returned q-element array; do not sort queries or copy sections."
+  }
+}

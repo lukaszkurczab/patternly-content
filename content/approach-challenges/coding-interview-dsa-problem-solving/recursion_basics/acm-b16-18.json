@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b16-18",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "recursion_basics",
+  "requiredFamilyIds": [
+    "recursion_basics"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "recursion_basics",
+    "mentalUnitId": "recursion_mistake_review",
+    "difficulty": "medium",
+    "questionId": "acm-b16-18-q1",
+    "prompt": "Evaluate an expression made of NUM(v), REF(id), ADD(left,right), and LET(id,v,body). LET binds id to the integer v only while evaluating its body; an inner LET may shadow an outer binding. REF of an unbound id returns ERROR, and an evaluated ERROR propagates. ADD evaluates left then right and sums them. Examples: LET(0,2,ADD(LET(0,9,REF(0)),REF(0))) returns 11; ADD(LET(0,9,REF(0)),REF(0)) returns ERROR.",
+    "constraints": [
+      "Identifiers are integer indices 0 through U-1, with 1 ≤ U ≤ 100000. Values and non-error sums fit signed 64-bit words.",
+      "The expression is a read-only tree with n nodes, 1 ≤ n ≤ 100000, height h ≤ 1000, and no shared nodes.",
+      "Array indexing, integer addition, and tagged result handling take constant time. New arrays must be initialized explicitly."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "method-3",
+          "approachId": "method-3",
+          "text": "Use one shared binding array, assign v at each LET, and keep that value after its body returns.",
+          "grade": "incorrect",
+          "feedback": "The second example would incorrectly reuse the completed LET binding for the later REF."
+        },
+        {
+          "optionId": "method-4",
+          "approachId": "method-4",
+          "text": "After every LET, set its identifier to UNBOUND instead of restoring the previous entry.",
+          "grade": "incorrect",
+          "feedback": "The first example must restore the outer value 2 after the inner LET, rather than erase it."
+        },
+        {
+          "optionId": "method-1",
+          "approachId": "method-1",
+          "text": "Initialize a U-entry array to UNBOUND. At LET save the old entry locally, install v, evaluate the body, restore the saved entry even on ERROR, and return the body result. Evaluate other nodes by their stated contracts.",
+          "grade": "correct",
+          "feedback": "Saving and restoring one binding gives each caller its original environment and handles shadowing and failures."
+        },
+        {
+          "optionId": "method-2",
+          "approachId": "method-2",
+          "text": "Start with a U-entry UNBOUND array and copy the entire current environment at every LET before binding v in the copy and evaluating its body.",
+          "grade": "partial",
+          "feedback": "The separate copies preserve scope correctly, but a saved entry per active binding avoids full-array copies."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "LET must save and restore the previous binding, including UNBOUND.",
+      "details": [
+        "Allocate a U-entry environment filled with UNBOUND. NUM returns a value; REF checks its indexed entry. ADD evaluates its children in order and propagates ERROR. LET saves the old indexed entry in its frame, sets the new integer binding, evaluates the body, restores the old entry, then returns the saved body result, including ERROR.",
+        "LET must save and restore the previous binding, including UNBOUND. Restore even when the body returns ERROR so a nested scope does not leak into a sibling. Direct environment indexing relies on the bounded ID universe.",
+        "“Use one shared binding array, assign v at each LET, and keep that value after its body returns.”: The second example would incorrectly reuse the completed LET binding for the later REF.",
+        "“After every LET, set its identifier to UNBOUND instead of restoring the previous entry.”: The first example must restore the outer value 2 after the inner LET, rather than erase it.",
+        "“Initialize a U-entry array to UNBOUND. At LET save the old entry locally, install v, evaluate the body, restore the saved entry even on ERROR, and return the body result. Evaluate other nodes by their stated contracts.”: Saving and restoring one binding gives each caller its original environment and handles shadowing and failures.",
+        "“Start with a U-entry UNBOUND array and copy the entire current environment at every LET before binding v in the copy and evaluating its body.”: The separate copies preserve scope correctly, but a saved entry per active binding avoids full-array copies."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "recursion_basics",
+    "mentalUnitId": "recursion_mistake_review",
+    "difficulty": "medium",
+    "questionId": "acm-b16-18-q2",
+    "prompt": "Analyze method-1 as described in the revealed method. Let n be expression node count, U identifier capacity, and h expression height. Include initialization of the new environment and all recursive frames. Exclude input and the returned tagged word. Indexed access is constant time; no hashing, array copying, or tail-call elimination. Choose the tightest worst-case time and auxiliary-space pair among the options.",
+    "constraints": [],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "cost-2",
+          "text": "O(nU) time, O(Uh) auxiliary space"
+        },
+        {
+          "optionId": "cost-3",
+          "text": "O(n + U) time, O(U) auxiliary space"
+        },
+        {
+          "optionId": "cost-0",
+          "text": "O(n + U) time, O(U + h) auxiliary space"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(n) time, O(h + 1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "cost-0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Initialize U environment entries, then evaluate demanded nodes with h saved bindings/frames.",
+      "details": [
+        "Initialize U entries once, then perform constant local work at each of at most n expression nodes. The environment uses U words and the deepest evaluation chain retains h frames.",
+        "Time: O(n + U).",
+        "Auxiliary space: O(U + h).",
+        "“O(n) time, O(h + 1) auxiliary space”: This omits the explicitly initialized U-entry environment, which can be larger than the expression.",
+        "“O(nU) time, O(Uh) auxiliary space”: Those costs describe repeated environment copying, not saving a single previous binding in each active LET frame.",
+        "“O(n + U) time, O(U) auxiliary space”: The environment is not the only live storage: nested evaluation also retains call frames, and h can exceed U."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-1",
+          "text": "This omits the explicitly initialized U-entry environment, which can be larger than the expression."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-2",
+          "text": "Those costs describe repeated environment copying, not saving a single previous binding in each active LET frame."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-3",
+          "text": "The environment is not the only live storage: nested evaluation also retains call frames, and h can exceed U."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "method-1",
+  "methodReveal": {
+    "title": "Method to analyze",
+    "description": "Allocate a U-entry environment filled with UNBOUND. NUM returns a value; REF checks its indexed entry. ADD evaluates its children in order and propagates ERROR. LET saves the old indexed entry in its frame, sets the new integer binding, evaluates the body, restores the old entry, then returns the saved body result, including ERROR."
+  }
+}

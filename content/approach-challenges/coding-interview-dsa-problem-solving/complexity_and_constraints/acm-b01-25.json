@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-25",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "maintain-summary-across-point-updates",
+    "difficulty": "medium",
+    "questionId": "acm-b01-25-q1",
+    "prompt": "Editable account total. A mutable array balances contains n signed integers, each between -1,000,000,000 and 1,000,000,000. Process q commands in order: set(i,x) replaces balances[i] with x, also within those value bounds, while ask adds the current sum of all balances to a checksum. Return only that checksum; apply all replacements to the given array. There are 1 <= n,q <= 200,000; set indices are valid and values, running totals and checksum fit signed 64-bit. Commands may mix arbitrarily, including asking before any change and replacing the same index repeatedly. Word operations and indexed array reads/writes cost constant time. Minimize worst-case total time, then peak auxiliary space.\n\nExample 1: Input: balances=[3,5], commands=[ask,set(0,7),ask,set(1,-2),ask]. Output: 25 (8+12+5).\nExample 2: Input: balances=[4], commands=[set(0,4),ask]. Output: 4.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "update-total-by-difference",
+          "text": "Compute the initial total once. On set(i,x), add x minus the old balances[i] to the total and then replace that entry. On ask, add the total to checksum.",
+          "grade": "correct",
+          "feedback": "A replacement changes exactly one contribution. Reading the old value before writing preserves the amount that must be removed."
+        },
+        {
+          "optionId": "B",
+          "approachId": "resum-after-every-change",
+          "text": "Compute an initial total; after each set, write the entry then rescan the whole array to refresh the total. On ask, use the refreshed total.",
+          "grade": "partial",
+          "feedback": "The summary always stays correct, but the known single-entry difference lets each replacement avoid rescanning unchanged balances."
+        },
+        {
+          "optionId": "C",
+          "approachId": "freeze-initial-total",
+          "text": "Compute the initial total once, apply every set to the array, and answer all asks using that unchanged initial total.",
+          "grade": "incorrect",
+          "feedback": "For balances=[4], commands=[set(0,9),ask], the answer is 9, but the frozen summary gives 4. Precomputation becomes stale after edits."
+        },
+        {
+          "optionId": "D",
+          "approachId": "add-new-value-only",
+          "text": "On set(i,x), add x to the current total and replace the entry, without removing its old value.",
+          "grade": "incorrect",
+          "feedback": "For balances=[4], commands=[set(0,9),ask], this makes the total 13 instead of 9. Replacement is not an additional deposit."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A reusable summary must be maintained when the underlying data changes; a localized edit can have a localized summary update.",
+      "details": [
+        "Sum the initial balances once and set checksum=0. For each set(i,x), read old=balances[i], update total=total-old+x, then write balances[i]=x. For each ask, add total to checksum. Return checksum and leave the requested replacements applied. Retain no separate prefix table or copy of balances.",
+        "Replacing balance old by x changes the full-array total by x-old. Apply that delta before an ask reads the total, and also update the input so a later replacement subtracts the current value. Repeated asks reuse the scalar total rather than rebuilding a prefix table.",
+        "“Compute the initial total once. On set(i,x), add x minus the old balances[i] to the total and then replace that entry. On ask, add the total to checksum.”: A replacement changes exactly one contribution. Reading the old value before writing preserves the amount that must be removed.",
+        "“Compute an initial total; after each set, write the entry then rescan the whole array to refresh the total. On ask, use the refreshed total.”: The summary always stays correct, but the known single-entry difference lets each replacement avoid rescanning unchanged balances.",
+        "“Compute the initial total once, apply every set to the array, and answer all asks using that unchanged initial total.”: For balances=[4], commands=[set(0,9),ask], the answer is 9, but the frozen summary gives 4. Precomputation becomes stale after edits.",
+        "“On set(i,x), add x to the current total and replace the entry, without removing its old value.”: For balances=[4], commands=[set(0,9),ask], this makes the total 13 instead of 9. Replacement is not an additional deposit."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "maintain-summary-across-point-updates",
+    "difficulty": "medium",
+    "questionId": "acm-b01-25-q2",
+    "prompt": "For update-total-by-difference, choose worst-case time and auxiliary space in terms of n balances and q commands. Include initial total computation and processing every command. The existing mutable array and supplied commands are input, while the checksum is scalar output; no recursion or hashing is used.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "updates",
+          "text": "O(n + q) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "rescans",
+          "text": "O(nq) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "table",
+          "text": "O(n + q) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "commands-only",
+          "text": "O(q) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "updates"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Scan initial balances once, then update or read the total per command.",
+      "details": [
+        "The initial scan costs O(n), and each of q commands then takes constant work. Only total, checksum, command fields and one old value are live beyond the input, so auxiliary space is O(1). The total changes by new minus old; no full summary table needs rebuilding after each replacement.",
+        "Time: O(n + q).",
+        "Auxiliary space: O(1).",
+        "“O(nq) time, O(1) auxiliary space”: The analyzed update uses one old value and one difference rather than resumming all n balances.",
+        "“O(n + q) time, O(n) auxiliary space”: There is no prefix table or saved input copy: the mutable array already supplies the old entry.",
+        "“O(q) time, O(1) auxiliary space”: This omits reading the initial balances to establish their total before any asks."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "rescans",
+          "text": "The analyzed update uses one old value and one difference rather than resumming all n balances."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "table",
+          "text": "There is no prefix table or saved input copy: the mutable array already supplies the old entry."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "commands-only",
+          "text": "This omits reading the initial balances to establish their total before any asks."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "update-total-by-difference",
+  "methodReveal": {
+    "title": "Adjust the total before replacement",
+    "description": "Sum the initial balances once and set checksum=0. For each set(i,x), read old=balances[i], update total=total-old+x, then write balances[i]=x. For each ask, add total to checksum. Return checksum and leave the requested replacements applied. Retain no separate prefix table or copy of balances."
+  }
+}

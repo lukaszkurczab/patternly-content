@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-09",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-09-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_bfs",
+    "difficulty": "medium",
+    "prompt": "How many shortest deliveries? A directed graph has unit-length edges. Given s and t, return the number of distinct shortest s-to-t vertex sequences modulo 1000000007. Return 0 if t is unreachable; when s=t, the empty-edge route counts as one. Routes are distinct when their vertex sequences differ.\n\nThe read-only outgoing lists contain IDs 0..V-1, with 1 <= V <= 200000 and 0 <= E <= 400000. There are no self-loops or duplicate ordered edges. All modular additions fit in signed 64-bit integers.\n\nExample 1: lists=[[1,2],[3],[3],[]], s=0,t=3, output=2.\nExample 2: lists=[[1,2],[2],[]], s=0,t=2, output=1: [0,2] is shorter than [0,1,2].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "bfs-distance-count",
+          "text": "Use BFS with distance and count arrays. Initialize s at distance zero with count one. On first discovery of v from u, set its distance to distance[u]+1 and copy count[u]. For another edge reaching v at that same distance, add count[u] modulo the modulus. Process the full BFS.",
+          "grade": "correct",
+          "feedback": "Shortest routes into v must come from the preceding distance layer. BFS processes every such predecessor before v propagates its final count, so ties are added without including longer walks."
+        },
+        {
+          "optionId": "B",
+          "approachId": "one-parent-count",
+          "text": "Run BFS with one parent per vertex and return 1 if t is reached, otherwise 0.",
+          "grade": "incorrect",
+          "feedback": "Example 1 has two shortest routes merging at 3. Keeping a single parent proves existence but discards the second route, so it returns 1 instead of 2."
+        },
+        {
+          "optionId": "C",
+          "approachId": "add-every-incoming-count",
+          "text": "Run a queue traversal and add count[u] to count[v] for every inspected edge u->v, even if v is closer to s than u or has the same distance.",
+          "grade": "incorrect",
+          "feedback": "In lists=[[1,2],[2],[]], s=0,t=2, this adds the contribution along 0->1->2 to the direct route and reports 2. Only predecessors exactly one layer earlier belong to shortest routes."
+        },
+        {
+          "optionId": "D",
+          "approachId": "enumerate-simple-routes",
+          "text": "Enumerate every simple s-to-t route, retain the minimum edge count, and count all routes of that length modulo the modulus.",
+          "grade": "incorrect",
+          "feedback": "A shortest route is simple, so this gives the right result, but enumerating routes is unnecessarily inefficient: the number of simple routes can grow exponentially. Distance-layer counts combine equivalent prefixes directly."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Equal-distance rediscovery must contribute another count, while longer rediscovery must contribute nothing. A single visited bit cannot express both rules.",
+      "details": [
+        "Initialize distances to -1 and counts to zero. Set distance[s]=0 and count[s]=1 and enqueue s. For each removed u, inspect every outgoing edge u->v. If v is unseen, set distance[v]=distance[u]+1, set count[v]=count[u] and enqueue v. Otherwise, add count[u] to count[v] modulo 1000000007 only when distance[v]=distance[u]+1. After the queue empties, return count[t].",
+        "Add a predecessor's count only along an edge increasing distance by exactly one. Longer or backward routes do not count. Equal-distance BFS layers ensure every shortest predecessor contributes before its child is processed.",
+        "“Use BFS with distance and count arrays. Initialize s at distance zero with count one. On first discovery of v from u, set its distance to distance[u]+1 and copy count[u]. For another edge reaching v at that same distance, add count[u] modulo the modulus. Process the full BFS.”: Shortest routes into v must come from the preceding distance layer. BFS processes every such predecessor before v propagates its final count, so ties are added without including longer walks.",
+        "“Run BFS with one parent per vertex and return 1 if t is reached, otherwise 0.”: Example 1 has two shortest routes merging at 3. Keeping a single parent proves existence but discards the second route, so it returns 1 instead of 2.",
+        "“Run a queue traversal and add count[u] to count[v] for every inspected edge u->v, even if v is closer to s than u or has the same distance.”: In lists=[[1,2],[2],[]], s=0,t=2, this adds the contribution along 0->1->2 to the direct route and reports 2. Only predecessors exactly one layer earlier belong to shortest routes.",
+        "“Enumerate every simple s-to-t route, retain the minimum edge count, and count all routes of that length modulo the modulus.”: A shortest route is simple, so this gives the right result, but enumerating routes is unnecessarily inefficient: the number of simple routes can grow exponentially. Distance-layer counts combine equivalent prefixes directly."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-09-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_bfs",
+    "difficulty": "medium",
+    "prompt": "Analyze bfs-distance-count. V is the total vertex count and E the directed edge count (or undirected edges stored twice where specified). Use preallocated indexed arrays and a V-slot frontier, with constant-time indexing and head/tail queue or stack operations. Include array initialization and all explicitly described scans. No hashing, recursion, array shifting, amortized growth, or input-list copying is used. Exclude the read-only input and returned result; include all other storage. Choose the tightest worst-case pair. Counts are maintained modulo the fixed modulus, so arithmetic is constant time. Return only count[t], a scalar. Distance and count arrays are auxiliary, not excluded output.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Combine route counts per edge instead of traversing each possible route separately.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: two arrays initialize V entries, each reachable vertex enters the queue once, and every reachable directed edge causes one constant-time comparison and at most one modular addition. Both arrays and the queue use O(V). The option “O(V + E) time, O(1) auxiliary space” omits this state. The option “O(V(V + E)) time, O(V) auxiliary space” treats alternative routes as separate traversals, but counts combine them. The option “O(V + E) time, O(V + E) auxiliary space” charges edge copies that are never constructed.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "bfs-distance-count",
+  "methodReveal": {
+    "title": "Count only preceding-layer contributions",
+    "description": "Initialize distances to -1 and counts to zero. Set distance[s]=0 and count[s]=1 and enqueue s. For each removed u, inspect every outgoing edge u->v. If v is unseen, set distance[v]=distance[u]+1, set count[v]=count[u] and enqueue v. Otherwise, add count[u] to count[v] modulo 1000000007 only when distance[v]=distance[u]+1. After the queue empties, return count[t]."
+  }
+}

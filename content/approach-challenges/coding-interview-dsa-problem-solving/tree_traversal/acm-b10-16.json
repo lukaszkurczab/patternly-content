@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b10-16",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "tree_traversal",
+  "requiredFamilyIds": [
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b10-16-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "carry_path_and_aggregate_state",
+    "difficulty": "medium",
+    "prompt": "Route Cards. Return one array of node values for every root-to-leaf path of a binary tree, visiting left-child paths before right-child paths. Each returned array must be an independent snapshot. Values include both endpoints. An empty tree returns an empty outer array.\n\nIn examples, x(left,right) denotes a node labelled x, and - denotes an absent child. Example 1: Input: 2(4(-,-),7(1(-,-),-)). Output: [[2,4],[2,7,1]]. Example 2: Input: 3(-,-). Output: [[3]]. Example 3: Input: -. Output: [].\n\nConstraints: 0 <= n <= 2000; values are signed 32-bit integers, possibly repeated. The immutable tree has child pointers only, no cycles or shared nodes, and arbitrary shape. Let L be the total number of integer entries in the returned inner arrays; all required output fits memory. Result arrays cannot alias a mutable working path.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "route-buffer",
+          "approachId": "route-buffer",
+          "text": "Use explicit enter/exit depth-first frames and one mutable path buffer. Append on entry, copy that buffer into a new result array only at a leaf, and remove the final entry on exit.",
+          "grade": "correct",
+          "feedback": "The buffer matches the current ancestor path, and leaf-only copies produce independent snapshots in the required order."
+        },
+        {
+          "optionId": "route-copy-descent",
+          "approachId": "route-copy-descent",
+          "text": "At every descent copy the whole current path for the child. Keep those private copies until their frames finish and return copies at leaves.",
+          "grade": "partial",
+          "feedback": "The snapshots and order are correct. Intermediate path copies are removable: one enter/exit buffer suffices before copying only the final leaf paths."
+        },
+        {
+          "optionId": "route-alias",
+          "approachId": "route-alias",
+          "text": "Use one mutable path buffer but append that buffer object itself to the result at every leaf, then remove entries on exit.",
+          "grade": "incorrect",
+          "feedback": "Earlier results change when the buffer changes. Example 1 requires two different snapshots, but aliased entries refer to the same ultimately emptied buffer."
+        },
+        {
+          "optionId": "route-every-prefix",
+          "approachId": "route-every-prefix",
+          "text": "Copy the current root-to-node path into the result at every node, including nodes with children.",
+          "grade": "incorrect",
+          "feedback": "Example 1 would include [2] and [2,7], which do not end at leaves and are not requested."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Separate traversal workspace from unavoidable path-output copying; returning paths has output-sensitive time.",
+      "details": [
+        "Use enter/exit frames in left-first depth-first order. On entry append the node value to one working path. At a leaf allocate an independent array and copy the current path into it, then append that array to the output. On exit remove the node value. Release frames after exit; retain no other paths.",
+        "One working path is extended on entry and shortened on exit. Copy it at each leaf so later backtracking cannot mutate an already returned route. Output-sensitive time must include the total copied path length L.",
+        "“Use explicit enter/exit depth-first frames and one mutable path buffer. Append on entry, copy that buffer into a new result array only at a leaf, and remove the final entry on exit.”: The buffer matches the current ancestor path, and leaf-only copies produce independent snapshots in the required order.",
+        "“At every descent copy the whole current path for the child. Keep those private copies until their frames finish and return copies at leaves.”: The snapshots and order are correct. Intermediate path copies are removable: one enter/exit buffer suffices before copying only the final leaf paths.",
+        "“Use one mutable path buffer but append that buffer object itself to the result at every leaf, then remove entries on exit.”: Earlier results change when the buffer changes. Example 1 requires two different snapshots, but aliased entries refer to the same ultimately emptied buffer.",
+        "“Copy the current root-to-node path into the result at every node, including nodes with children.”: Example 1 would include [2] and [2,7], which do not end at leaves and are not requested."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b10-16-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "carry_path_and_aggregate_state",
+    "difficulty": "medium",
+    "prompt": "Analyze only the revealed shared-buffer method for n>=1 nodes and height h in nodes. Let L be the sum of lengths of all returned path arrays. What is the tight total-time and peak auxiliary-space pair? Count the mutable path buffer and explicit frames. Exclude all final output arrays and input. Copying a leaf path of length d costs O(d) time; output construction time is included. Buffer and output-list append are amortized constant-time; shrinking the working path is constant-time.",
+    "constraints": [
+      "All legal shapes are allowed; do not assume balance. Heights count nodes, not edges.",
+      "All integer/pointer operations and fixed-size frame operations take constant time. Appending to a dynamic path buffer or output list has amortized constant cost; copying d integers costs O(d). No hashing is used. Count explicit frames and buffer capacity, whose growth retains only a constant multiple of its peak length."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "n-h",
+          "text": "O(n) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "nl-h",
+          "text": "O(n+L) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "nl-l",
+          "text": "O(n+L) time, O(L) auxiliary space"
+        },
+        {
+          "optionId": "nh-nh",
+          "text": "O(nh) time, O(nh) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "nl-h"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Traversal events cost n; independent returned route copies add L work.",
+      "details": [
+        "Node entry/exit events cost O(n); all required output copying costs O(L). Live frames and the one mutable path use O(h) space; returned arrays are excluded.",
+        "Entry/exit events keep the buffer equal to the current root path. Copying exactly at leaves creates one independent required array per route; processing left before right fixes their order.",
+        "“O(n) time, O(h) auxiliary space”: Output copies cannot be omitted from time: L can grow faster than n when many leaves share long prefixes.",
+        "“O(n+L) time, O(h) auxiliary space”: Node entry/exit events cost O(n); all required output copying costs O(L). Live frames and the one mutable path use O(h) space; returned arrays are excluded.",
+        "“O(n+L) time, O(L) auxiliary space”: L counts returned entries, which the question excludes from auxiliary space. They are not an additional set of working copies.",
+        "“O(nh) time, O(nh) auxiliary space”: This describes unnecessary repeated path storage, not the one-buffer method. Its workspace is bounded by the active path and frames."
+      ]
+    }
+  },
+  "analyzedApproachId": "route-buffer",
+  "methodReveal": {
+    "title": "Copy only final paths",
+    "description": "Use enter/exit frames in left-first depth-first order. On entry append the node value to one working path. At a leaf allocate an independent array and copy the current path into it, then append that array to the output. On exit remove the node value. Release frames after exit; retain no other paths."
+  }
+}

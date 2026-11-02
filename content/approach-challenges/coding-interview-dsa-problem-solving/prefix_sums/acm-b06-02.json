@@ -1,10 +1,13 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
   "problemId": "acm-b06-02",
-  "problemVersion": "1",
+  "problemVersion": "2",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "prefix_sums",
-  "requiredFamilyIds": ["prefix_sums", "hash_map_and_set"],
+  "requiredFamilyIds": [
+    "prefix_sums",
+    "hash_map_and_set"
+  ],
   "difficulty": "hard",
   "approachQuestion": {
     "questionId": "acm-b06-02-q1",
@@ -61,16 +64,24 @@
         }
       ]
     },
-    "answer": { "type": "approach_choice" },
+    "answer": {
+      "type": "approach_choice"
+    },
     "feedback": {
       "type": "approach_choice",
       "reason": "An interval total is the difference of two prefix totals. Count earlier prefixes with the required value, and preserve boundary order so each match is a non-empty interval ending at the current position.",
-      "details": {
-        "expectedApproachIds": ["prefix-frequency-stream", "stored-prefix-frequency"],
-        "prefixDifference": "For current prefix S and an earlier boundary prefix P, the interval total is S−P; it equals target exactly when P=S−target.",
-        "duplicatePrefixes": "Store frequencies, not just presence: multiple earlier boundaries with the same total represent distinct intervals.",
-        "emptyIntervalGuard": "Query before adding the current prefix. The initial prefix zero represents the boundary before index zero."
-      }
+      "details": [
+        "Maintain the total through the current position and a map from previously seen totals to their frequencies. Before inserting the current total, look up the total that would leave exactly the requested change between the earlier boundary and this position. Add all matching earlier boundaries to the answer, then record the current total. Seed the map with a zero total for the boundary before the sequence.",
+        "For current total S, an earlier total S-target defines the needed interval. Query before insertion to exclude an empty interval; frequencies count different earlier boundaries with the same total.",
+        "For current prefix S and an earlier boundary prefix P, the interval total is S−P; it equals target exactly when P=S−target.",
+        "Store frequencies, not just presence: multiple earlier boundaries with the same total represent distinct intervals.",
+        "Query before adding the current prefix. The initial prefix zero represents the boundary before index zero.",
+        "“Scan left to right with running prefix S. Before recording the current S, add the frequency of S − target to the answer; then record this S in a frequency map. Start the map with frequency 1 for prefix zero.”: A preceding prefix at S − target identifies exactly an interval ending here. Recording after the lookup prevents the current boundary from forming an empty interval.",
+        "“First store all n prefix totals after each position. Then scan those totals in order, adding the frequency of the earlier value currentPrefix − target and recording each current total afterward; initialize the frequency map with prefix zero.”: This uses the same prefix-difference relation and counts only earlier boundaries. Each stored total is handled in order, and its frequency preserves distinct earlier boundaries with the same value.",
+        "“Expand a right boundary and shrink the left boundary whenever the current total exceeds target; count a window whenever its total equals target.”: Negative changes break the monotonic rule needed to discard a left boundary. For [1, −1, 1] with target 1, valid intervals are [1], [1, −1, 1], and the final [1]; a one-window scan does not count all three.",
+        "“For each position, add its value to the running prefix, record that prefix in the frequency map, and then add the frequency of prefix − target to the answer.”: Recording first lets the current boundary pair with itself. For a single change [0] and target 0, it counts the empty interval as well as the one valid non-empty interval.",
+        "“For every starting position, extend the ending position one step at a time, maintain that interval's total, and count matches.”: This checks every interval correctly, but there can be n(n+1)/2 of them. The same prefix boundaries can instead be summarized by their frequencies as the scan proceeds."
+      ]
     }
   },
   "complexityQuestion": {
@@ -84,25 +95,44 @@
       "type": "choice_single",
       "scoringMethod": "exact_selected_set",
       "options": [
-        { "optionId": "expected-linear-linear", "text": "Expected O(n) time and O(n) auxiliary space" },
-        { "optionId": "worst-linear-linear", "text": "Worst-case O(n) time and O(n) auxiliary space" },
-        { "optionId": "expected-n2-constant", "text": "Expected O(n²) time and O(1) auxiliary space" },
-        { "optionId": "expected-linear-constant", "text": "Expected O(n) time and O(1) auxiliary space" },
-        { "optionId": "expected-nlogn-linear", "text": "Expected O(n log n) time and O(n) auxiliary space" }
+        {
+          "optionId": "expected-linear-linear",
+          "text": "Expected O(n) time and O(n) auxiliary space"
+        },
+        {
+          "optionId": "worst-linear-linear",
+          "text": "Worst-case O(n) time and O(n) auxiliary space"
+        },
+        {
+          "optionId": "expected-n2-constant",
+          "text": "Expected O(n²) time and O(1) auxiliary space"
+        },
+        {
+          "optionId": "expected-linear-constant",
+          "text": "Expected O(n) time and O(1) auxiliary space"
+        },
+        {
+          "optionId": "expected-nlogn-linear",
+          "text": "Expected O(n log n) time and O(n) auxiliary space"
+        }
       ]
     },
-    "answer": { "type": "choice_single", "optionId": "expected-linear-linear" },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "expected-linear-linear"
+    },
     "feedback": {
       "type": "choice_single",
-      "reason": "Each change is processed once with an expected constant number of frequency-map operations. In the worst case, the map can contain a distinct entry for each prefix.",
-      "details": {
-        "expectedPair": "Expected O(n) time; O(n) auxiliary space",
-        "timeDerivation": "There are n running prefixes. Under the explicit expected O(1) map-operation assumption, each prefix performs one lookup and one frequency update. Worst-case map behavior is not claimed to be constant.",
-        "spaceDerivation": "At most n+1 distinct prefix values are stored, including the initial zero; the running total and answer use constant additional state. The input and scalar output are excluded.",
-        "prefixCount": "A matching earlier boundary contributes its frequency, so duplicate prefix totals are all counted.",
-        "nonEmptyBoundary": "The lookup occurs before recording the current prefix, and the seeded zero handles intervals beginning at index zero.",
-        "methodComparison": "The stored-prefix alternative B also has expected O(n) time and O(n) auxiliary space; its extra prefix list changes storage constants, not the asymptotic pair. Enumerating all intervals is correct but takes O(n²) time with O(1) extra space. The positive-only window is not correct for signed values, and recording the current prefix before lookup counts an empty interval. The target has expected O(n) time and O(n) auxiliary space under the stated hash-map assumption; worst-case O(1) hash operations are not guaranteed."
-      }
+      "reason": "Each entry causes expected constant map work; distinct prefixes determine storage.",
+      "details": [
+        "Each change is processed once with an expected constant number of frequency-map operations. In the worst case, the map can contain a distinct entry for each prefix.",
+        "Expected O(n) time; O(n) auxiliary space",
+        "There are n running prefixes. Under the explicit expected O(1) map-operation assumption, each prefix performs one lookup and one frequency update. Worst-case map behavior is not claimed to be constant.",
+        "At most n+1 distinct prefix values are stored, including the initial zero; the running total and answer use constant additional state. The input and scalar output are excluded.",
+        "A matching earlier boundary contributes its frequency, so duplicate prefix totals are all counted.",
+        "The lookup occurs before recording the current prefix, and the seeded zero handles intervals beginning at index zero.",
+        "The stored-prefix alternative B also has expected O(n) time and O(n) auxiliary space; its extra prefix list changes storage constants, not the asymptotic pair. Enumerating all intervals is correct but takes O(n²) time with O(1) extra space. The positive-only window is not correct for signed values, and recording the current prefix before lookup counts an empty interval. The target has expected O(n) time and O(n) auxiliary space under the stated hash-map assumption; worst-case O(1) hash operations are not guaranteed."
+      ]
     }
   },
   "analyzedApproachId": "prefix-frequency-stream",

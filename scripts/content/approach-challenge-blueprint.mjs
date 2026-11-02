@@ -1,3 +1,8 @@
+import {
+  APPROACH_CHALLENGE_FREE_PROBLEM_COUNT,
+  APPROACH_CHALLENGE_PREMIUM_PROBLEM_COUNT,
+} from "./approach-challenge-bank.mjs";
+
 const EXPECTED_KEYS = Object.freeze([
   "blueprintId", "blueprintVersion", "modeId", "trackId", "requestedProblemCounts",
   "defaultRequestedProblemCount", "occurrencesPerProblem", "supportedDifficulties",
@@ -24,8 +29,8 @@ const EXPECTED = Object.freeze({
   manualRule: "all_required_families_selected",
   deduplicateBy: "problemId",
   freeNodeId: "complexity_and_constraints",
-  freeProblemCount: 6,
-  premiumProblemCount: 30,
+  freeProblemCount: APPROACH_CHALLENGE_FREE_PROBLEM_COUNT,
+  premiumProblemCount: APPROACH_CHALLENGE_PREMIUM_PROBLEM_COUNT,
   emptyPool: "unavailable",
   shortening: "explicit_confirmation",
   resumeAccessPolicy: "session_scoped_start_grant_exact_pins",

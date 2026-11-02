@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-21",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b14-21-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "A line of beacons has positive integer heights that may repeat. Positions i<j form a visible pair when every intermediate height is at most min(height[i],height[j]); equal-height intermediate beacons do not obstruct. Count unordered visible pairs. Example: [3,2,2,3] returns 6, while [2,3,2] returns 2. Choose the best approach.",
+    "constraints": [
+      "The input is immutable; n is between 1 and 200,000. All integers, indices, counts, and arithmetic results fit in signed 64-bit machine words; comparisons and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "group-equal-visible-heights",
+          "text": "Scan with a decreasing stack of (height,count) groups. Pop smaller groups, adding each count. If empty, push (h,1). If top height equals h, add its count, add one more if a taller group lies below it, then increment the equal group count. Otherwise add one and push (h,1).",
+          "grade": "correct",
+          "feedback": "All smaller popped candidates see the new beacon. Every equal-height candidate sees it too, and the nearest taller candidate behind that equal group is also visible. A taller top blocks any earlier groups, so only one such taller candidate is counted."
+        },
+        {
+          "optionId": "B",
+          "approachId": "keep-equals-as-strict-blockers",
+          "text": "Use an ordinary decreasing individual-height stack: pop and count smaller heights, then count only the nearest remaining height and push the current height.",
+          "grade": "incorrect",
+          "feedback": "Equal beacons do not block each other here. For [2,2,2], all 3 pairs are visible, but counting only the nearest survivor gives 2."
+        },
+        {
+          "optionId": "C",
+          "approachId": "count-entire-taller-group",
+          "text": "When current height is smaller than the top group, add the entire top group count before pushing it.",
+          "grade": "incorrect",
+          "feedback": "Only the nearest taller beacon is visible; it obstructs earlier taller ones. For [3,3,2], the last beacon sees only its immediate predecessor, and the total is 2, not 3."
+        },
+        {
+          "optionId": "D",
+          "approachId": "inspect-all-pair-interiors",
+          "text": "Test every endpoint pair by scanning its interior against the shorter endpoint height.",
+          "grade": "incorrect",
+          "feedback": "It is correct but repeatedly scans overlapping interiors across all pairs, causing cubic work. Grouped candidates count the pairs without materializing them."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Compress equal-height candidates while accounting for their multiplicity and one taller blocker.",
+      "details": [
+        "Maintain strictly decreasing height groups with multiplicities. A new height sees all smaller groups removed, every member of its equal group if present, and at most the nearest taller beacon. Preserve equal groups so their multiplicity is available to later beacons.",
+        "Equal-height beacons remain one multiplicity group because later equal beacons can see all of them. Smaller groups are removed; after equality at most one nearest taller beacon is additionally visible. Treating all heights as distinct loses these counts.",
+        "“Scan with a decreasing stack of (height,count) groups. Pop smaller groups, adding each count. If empty, push (h,1). If top height equals h, add its count, add one more if a taller group lies below it, then increment the equal group count. Otherwise add one and push (h,1).”: All smaller popped candidates see the new beacon. Every equal-height candidate sees it too, and the nearest taller candidate behind that equal group is also visible. A taller top blocks any earlier groups, so only one such taller candidate is counted.",
+        "“Use an ordinary decreasing individual-height stack: pop and count smaller heights, then count only the nearest remaining height and push the current height.”: Equal beacons do not block each other here. For [2,2,2], all 3 pairs are visible, but counting only the nearest survivor gives 2.",
+        "“When current height is smaller than the top group, add the entire top group count before pushing it.”: Only the nearest taller beacon is visible; it obstructs earlier taller ones. For [3,3,2], the last beacon sees only its immediate predecessor, and the total is 2, not 3.",
+        "“Test every endpoint pair by scanning its interior against the shorter endpoint height.”: It is correct but repeatedly scans overlapping interiors across all pairs, causing cubic work. Grouped candidates count the pairs without materializing them."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-21-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "For group-equal-visible-heights, choose the tightest worst-case time and auxiliary-space pair. Let n be the beacon count. Each group stores height and multiplicity in constant-size words; return only a scalar count, with no pair list.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One group lifetime per beacon bounds visibility counting despite repeated heights.",
+      "details": [
+        "There is at most one new group per beacon, and every group can be removed once. All multiplicity additions are constant-time word operations, so time is O(n). Strictly decreasing heights retain n groups, giving O(n) auxiliary space.",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "group-equal-visible-heights",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "Maintain strictly decreasing height groups with multiplicities. A new height sees all smaller groups removed, every member of its equal group if present, and at most the nearest taller beacon. Preserve equal groups so their multiplicity is available to later beacons."
+  }
+}

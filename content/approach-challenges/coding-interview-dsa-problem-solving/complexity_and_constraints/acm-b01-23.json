@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-23",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints",
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "global-initialization-versus-reachable-edge-work",
+    "difficulty": "medium",
+    "questionId": "acm-b01-23-q1",
+    "prompt": "Hub broadcast. A directed graph has V vertices numbered 0 through V-1 and is given as read-only adjacency lists. Return the number of vertices reachable from a start vertex, including start. There are 1 <= V <= 200,000 vertices and at most 400,000 listed directed edges; self-loops and cycles are allowed, duplicate edges are not. The adjacency list for a vertex is directly accessible and each neighbor reference costs constant time to read. All vertices are valid. Choose minimum deterministic worst-case total time, then asymptotic peak auxiliary storage. Storage offers a zeroed boolean array with allocation/initialization cost proportional to its length and a queue with constant-cost enqueue/dequeue and linear peak storage in its live items. Return only a count.\n\nExample 1: Input: adjacency=[[1],[2],[1],[]], start=0. Output: 3.\nExample 2: Input: adjacency=[[],[0]], start=0. Output: 1.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "mark-before-enqueue",
+          "text": "Allocate V false marks. Mark start and enqueue it; repeatedly dequeue a vertex and enqueue each still-unmarked neighbor only after marking it. Count vertices when first marked.",
+          "grade": "correct",
+          "feedback": "Marking before enqueue makes each reachable vertex enter once despite cycles. Only outgoing lists of reached vertices need to be read."
+        },
+        {
+          "optionId": "B",
+          "approachId": "depth-first-marked",
+          "text": "Allocate V false marks and use an explicit depth-first stack. Mark vertices when pushing them and expand each popped vertex’s adjacency list once.",
+          "grade": "correct",
+          "feedback": "This visits exactly the same reachable vertices and outgoing edges, with the same asymptotic worst-case costs as the marked queue method."
+        },
+        {
+          "optionId": "C",
+          "approachId": "precompute-all-starts",
+          "text": "Run a marked reachability traversal separately from every vertex and retain all reachable sets, then answer for start.",
+          "grade": "incorrect",
+          "feedback": "It gives the right count but solves many unrequested searches and retains a global reachability table. Only one start was requested."
+        },
+        {
+          "optionId": "D",
+          "approachId": "no-visited-marks",
+          "text": "Enqueue start, then repeatedly enqueue every outgoing neighbor without any visited marks; count dequeued items until the queue is empty.",
+          "grade": "incorrect",
+          "feedback": "For adjacency=[[0]], the self-loop repeatedly re-enqueues start and the process never finishes, although the required count is 1."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Account separately for global mark initialization and work on the subgraph actually reached.",
+      "details": [
+        "Allocate and initialize V false marks. Mark start, enqueue it, and initialize count=1. Dequeue each pending vertex and examine its adjacency list; for each unmarked neighbor, mark it immediately, increment count, and enqueue it. Return count when the queue is empty. Retain no copied adjacency lists.",
+        "Mark a neighbor when enqueuing it, so two incoming edges cannot queue duplicate copies. Only lists reached from start are scanned, but initialization still touches all V marks. A graph with many unreachable edges does not force visiting those edges under this adjacency-list method.",
+        "“Allocate V false marks. Mark start and enqueue it; repeatedly dequeue a vertex and enqueue each still-unmarked neighbor only after marking it. Count vertices when first marked.”: Marking before enqueue makes each reachable vertex enter once despite cycles. Only outgoing lists of reached vertices need to be read.",
+        "“Allocate V false marks and use an explicit depth-first stack. Mark vertices when pushing them and expand each popped vertex’s adjacency list once.”: This visits exactly the same reachable vertices and outgoing edges, with the same asymptotic worst-case costs as the marked queue method.",
+        "“Run a marked reachability traversal separately from every vertex and retain all reachable sets, then answer for start.”: It gives the right count but solves many unrequested searches and retains a global reachability table. Only one start was requested.",
+        "“Enqueue start, then repeatedly enqueue every outgoing neighbor without any visited marks; count dequeued items until the queue is empty.”: For adjacency=[[0]], the self-loop repeatedly re-enqueues start and the process never finishes, although the required count is 1."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "global-initialization-versus-reachable-edge-work",
+    "difficulty": "medium",
+    "questionId": "acm-b01-23-q2",
+    "prompt": "Analyze mark-before-enqueue. Let R be the reachable vertex count and E_R the number of edges listed out of those R vertices. Choose tight worst-case total time and auxiliary space, including initialization of all V marks. Do not count edges listed only out of unreachable vertices. The boolean marks are ordinary allocated storage, not a pre-initialized input; no hashing or recursion is used.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "initialize-plus-reached",
+          "text": "O(V + E_R) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "reached-only",
+          "text": "O(R + E_R) time, O(R) auxiliary space"
+        },
+        {
+          "optionId": "all-edges",
+          "text": "O(V + E) time, O(V) auxiliary space, where E is the entire graph edge count"
+        },
+        {
+          "optionId": "quadratic",
+          "text": "O(V²) time, O(V²) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "initialize-plus-reached"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Initialize V marks, then scan only reachable adjacency entries.",
+      "details": [
+        "Zeroing the mark array costs O(V). Each reachable vertex is queued once and its outgoing edges examined once, adding O(R+E_R); R<=V gives O(V+E_R). Unreachable outgoing lists are never scanned. The V marks dominate auxiliary space, with at most R queued vertices. Input adjacency lists are excluded and are not copied.",
+        "Time: O(V + E_R).",
+        "Auxiliary space: O(V).",
+        "“O(R + E_R) time, O(R) auxiliary space”: This omits zeroing and storing all V marks, even when the reachable component is tiny.",
+        "“O(V + E) time, O(V) auxiliary space, where E is the entire graph edge count”: This is a valid loose upper bound, but unreachable outgoing edges add no traversal work, so E_R is tighter.",
+        "“O(V²) time, O(V²) auxiliary space”: The method neither constructs a reachability matrix nor examines every possible vertex pair."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "reached-only",
+          "text": "This omits zeroing and storing all V marks, even when the reachable component is tiny."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "all-edges",
+          "text": "This is a valid loose upper bound, but unreachable outgoing edges add no traversal work, so E_R is tighter."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "quadratic",
+          "text": "The method neither constructs a reachability matrix nor examines every possible vertex pair."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "mark-before-enqueue",
+  "methodReveal": {
+    "title": "Mark each vertex before queueing it",
+    "description": "Allocate and initialize V false marks. Mark start, enqueue it, and initialize count=1. Dequeue each pending vertex and examine its adjacency list; for each unmarked neighbor, mark it immediately, increment count, and enqueue it. Return count when the queue is empty. Retain no copied adjacency lists."
+  }
+}

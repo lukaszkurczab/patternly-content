@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b08-05",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "stack",
+  "requiredFamilyIds": [
+    "stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "undo-inverse-delta",
+    "difficulty": "medium",
+    "questionId": "acm-b08-05-q1",
+    "prompt": "A meter starts at value 0 with no active edits. An immutable list contains n commands, 0 <= n <= 200,000. CHANGE(d) adds signed integer d and records an active edit, even when d is zero. UNDO reverses the most recent still-active CHANGE and removes that edit; with no active edits it does nothing. READ appends the current value to the returned list. There is no redo. All values and arithmetic results fit signed 64-bit integers. Return the READ values in command order. Choose a method minimizing worst-case total processing time. Input: [CHANGE(6), CHANGE(-2), UNDO, READ, CHANGE(3), UNDO, UNDO, READ]. Output: [6,0].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "undo-delta-stack",
+          "text": "Keep the current value and a stack of active deltas. CHANGE adds and pushes d. UNDO pops and subtracts the delta if present. READ appends the current value.",
+          "grade": "correct",
+          "feedback": "The latest active delta is exactly the change to reverse; its sign must be preserved."
+        },
+        {
+          "optionId": "B",
+          "approachId": "undo-prior-value-stack",
+          "text": "Keep the current value and a stack of prior values. Before CHANGE push the current value, then add d. UNDO restores and pops the top if present; READ records the current value.",
+          "grade": "correct",
+          "feedback": "A prior value restores precisely the state before the latest active change, using the same amount of work and storage as deltas."
+        },
+        {
+          "optionId": "C",
+          "approachId": "undo-oldest-delta",
+          "text": "Store active deltas in a queue; UNDO subtracts and removes the oldest delta.",
+          "grade": "incorrect",
+          "feedback": "For [CHANGE(6),CHANGE(-2),UNDO,READ], this reports -2 instead of 6 because undo must reverse the newest edit."
+        },
+        {
+          "optionId": "D",
+          "approachId": "undo-signless",
+          "text": "Push the absolute value of every delta and subtract the top on UNDO.",
+          "grade": "incorrect",
+          "feedback": "For [CHANGE(-2),UNDO,READ], this reports -4 rather than 0. Undoing a negative delta requires adding its magnitude."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Undo reverses the most recent active change; either inverse deltas or prior scalar values preserve enough information.",
+      "details": [
+        "Store each CHANGE delta while adding it to the current value. For a nonempty UNDO, pop the newest delta and subtract it. Empty UNDO does nothing; READ appends the current value.",
+        "Undo removes the latest active delta, not the last READ or a previously undone change. Subtracting that saved delta reverses its contribution; empty UNDO leaves the value unchanged.",
+        "“Keep the current value and a stack of active deltas. CHANGE adds and pushes d. UNDO pops and subtracts the delta if present. READ appends the current value.”: The latest active delta is exactly the change to reverse; its sign must be preserved.",
+        "“Keep the current value and a stack of prior values. Before CHANGE push the current value, then add d. UNDO restores and pops the top if present; READ records the current value.”: A prior value restores precisely the state before the latest active change, using the same amount of work and storage as deltas.",
+        "“Store active deltas in a queue; UNDO subtracts and removes the oldest delta.”: For [CHANGE(6),CHANGE(-2),UNDO,READ], this reports -2 instead of 6 because undo must reverse the newest edit.",
+        "“Push the absolute value of every delta and subtract the top on UNDO.”: For [CHANGE(-2),UNDO,READ], this reports -4 rather than 0. Undoing a negative delta requires adding its magnitude."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "undo-inverse-delta",
+    "difficulty": "medium",
+    "questionId": "acm-b08-05-q2",
+    "prompt": "For undo-delta-stack, choose the tightest worst-case total time and auxiliary-space bounds in terms of n, the input length.",
+    "constraints": [
+      "The input is immutable and excluded from auxiliary space. Returned output is excluded, but all working buffers count even if later copied into output.",
+      "Fixed-size integers, characters, indices and comparisons take constant time. Arithmetic is unit cost under the stated range guarantee.",
+      "Use an iterative implementation with a preallocated n-entry array and a top index: push and pop take constant time. No recursion, hashing, or hidden whole-buffer copies occur.",
+      "Materializing output takes time proportional to its length; no persistent snapshots or string concatenation are used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-linear",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "logarithmic-linear",
+          "text": "O(log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-linear"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Process commands once and retain the active change history.",
+      "details": [
+        "Each command performs bounded work and each READ writes one result. All n commands may be CHANGE, leaving n active deltas even with an empty result. Thus total time and auxiliary stack space are O(n). No document snapshots or recursion are involved.",
+        "Time: O(n).",
+        "Auxiliary space: O(n).",
+        "“O(n) time, O(1) auxiliary space”: n consecutive CHANGE commands retain n undoable deltas even if no READ output is produced.",
+        "“O(n²) time, O(n) auxiliary space”: Each CHANGE pushes one delta and each successful UNDO removes one; command prefixes are not replayed to recover old values.",
+        "“O(log n) time, O(n) auxiliary space”: A final CHANGE or UNDO can affect a later READ, so arbitrary command streams require a full worst-case scan."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "linear-constant",
+          "text": "n consecutive CHANGE commands retain n undoable deltas even if no READ output is produced."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "quadratic-linear",
+          "text": "Each CHANGE pushes one delta and each successful UNDO removes one; command prefixes are not replayed to recover old values."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "logarithmic-linear",
+          "text": "A final CHANGE or UNDO can affect a later READ, so arbitrary command streams require a full worst-case scan."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "undo-delta-stack",
+  "methodReveal": {
+    "title": "Reverse the newest active delta",
+    "description": "Store each CHANGE delta while adding it to the current value. For a nonempty UNDO, pop the newest delta and subtract it. Empty UNDO does nothing; READ appends the current value."
+  }
+}

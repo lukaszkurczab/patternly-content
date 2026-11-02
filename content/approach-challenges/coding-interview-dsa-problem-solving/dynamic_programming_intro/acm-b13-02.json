@@ -1,6 +1,6 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
-  "problemVersion": "1",
+  "problemVersion": "2",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "dynamic_programming_intro",
   "requiredFamilyIds": [
@@ -61,7 +61,14 @@
     "feedback": {
       "type": "approach_choice",
       "reason": "The last coin identifies a smaller amount that must already be solved. This lets us compare every legal final step while keeping unreachable amounts explicit.",
-      "details": {}
+      "details": [
+        "Start with amount zero. For each larger amount, consider each denomination that could be the last coin. If the smaller amount is reachable, add one coin to its minimum and keep the best result. If no reachable predecessor exists, mark the amount unreachable. Processing amounts in increasing order allows every denomination to be reused.",
+        "The final coin comes from a reachable smaller amount. Positive denominations make those predecessor states already available in increasing-amount order. An unreachable sentinel must not become a candidate merely by adding one.",
+        "“Create best for amounts from 0 to target and set best[0]=0. For each positive amount, consider every denomination no greater than it; if the smaller amount is reachable, add one coin. Process amounts in increasing order so a denomination can be reused.”: The state is the minimum coin count for an exact amount. Each possible last denomination leads to a smaller amount that has already been solved; unreachable amounts remain marked as such.",
+        "“Create dp[i][s] for the first i denomination types and amount s. In each row, compare skipping the current denomination with using it and moving to a smaller amount in the same row; keep every row.”: This recurrence is correct for every allowed input; reading a smaller amount from the current row allows unlimited reuse. The full table keeps older denomination rows that later rows no longer read. The previous row and the row being built are enough, or one array can be updated in increasing order, so the remaining rows are removable storage.",
+        "“Sort denominations from largest to smallest. Repeatedly choose the largest denomination no greater than the remaining amount, then reject the result if the remainder is not zero.”: Choosing the largest denomination first does not always minimize the count. For coins=[1,3,4] and target=6, this picks 4, then 1 and 1: three coins. Two coins of value 3 are better.",
+        "“Enumerate sequences of denominations whose total does not exceed target, then return the shortest sequence that reaches target.”: This can return the right minimum, but it explores many coin orders and revisits the same remaining amounts. Different sequences often lead to the same remaining amount and the same future choices, so exploring each sequence repeats those decisions."
+      ]
     }
   },
   "complexityQuestion": {
@@ -104,11 +111,15 @@
     },
     "feedback": {
       "type": "choice_single",
-      "reason": "For every positive amount s through T, the method checks up to k denominations, so the work depends on both parameters. The best array has T+1 entries, plus a constant number of temporary values. Input, output, and call stack add no auxiliary space.",
-      "details": {
-        "time": "O(kT)",
-        "additionalSpace": "O(T)"
-      },
+      "reason": "Check up to k last-coin choices for each amount and retain T+1 minima.",
+      "details": [
+        "For every positive amount s through T, the method checks up to k denominations, so the work depends on both parameters. The best array has T+1 entries, plus a constant number of temporary values. Input, output, and call stack add no auxiliary space.",
+        "Time: O(kT).",
+        "Auxiliary space: O(T).",
+        "“O(T) time, O(T) auxiliary space”: Under the stated k,T analysis, each amount checks up to k denominations; this pair omits those checks. T=0 is only the constant-time base case.",
+        "“O(kT) time, O(kT) auxiliary space”: The time bound matches, but the method stores one array of T+1 amount values, not a table for every denomination and amount pair.",
+        "“O(kT log(k+1)) time, O(T) auxiliary space”: The method does not sort denominations or use a heap; it checks denominations directly in each state. The extra log(k+1) factor is not part of its tight time bound."
+      ],
       "messages": [
         {
           "kind": "wrong_option",

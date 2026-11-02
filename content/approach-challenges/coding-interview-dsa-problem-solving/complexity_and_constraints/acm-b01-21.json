@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-21",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints",
+    "hash_map_and_set"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "peak-state-across-independent-batches",
+    "difficulty": "medium",
+    "questionId": "acm-b01-21-q1",
+    "prompt": "Independent rosters. A read-only array contains b rosters, each an array of signed 64-bit IDs. Return one boolean per roster: true exactly when that roster has no repeated ID. The same ID may occur in different rosters without invalidating either. There are 1 <= b <= 100,000 rosters, N <= 200,000 total entries, and each roster length is directly available. Let K be the largest roster length, possibly zero. Choose minimum expected total time, then peak auxiliary storage under this model: a hash set of d fixed-size keys supports expected amortized constant-cost membership/insertion and peak storage proportional to d+1, including resizing. Allocate and release sets per roster; releasing d keys costs at most proportional to d+1. Expectations concern hashing, not the input distribution. The b booleans are required output.\n\nExample 1: Input: rosters=[[4,8],[4,4],[],[8]]. Output: [true,false,true,true].\nExample 2: Input: rosters=[[],[]]. Output: [true,true].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "release-set-per-roster",
+          "text": "For each roster, create a fresh empty set and a true flag. Check every ID, mark false on a repeated key, and insert it; write the flag, then release the set before the next roster.",
+          "grade": "correct",
+          "feedback": "Uniqueness is local to one roster. Once its flag is written, its keys can no longer affect another answer and can be released."
+        },
+        {
+          "optionId": "B",
+          "approachId": "retain-all-roster-sets",
+          "text": "Create a separate set per roster, check uniqueness within each, and retain every set until the full output has been returned.",
+          "grade": "partial",
+          "feedback": "All booleans are correct, but sets from completed rosters are unnecessary. Retaining them can make peak storage depend on the whole collection rather than the largest roster."
+        },
+        {
+          "optionId": "C",
+          "approachId": "one-global-set",
+          "text": "Use one set for all rosters without clearing it, marking a roster false whenever its ID was seen anywhere before.",
+          "grade": "incorrect",
+          "feedback": "For [[4],[4]], both rosters are locally unique and should return [true,true]. The global set wrongly marks the second false."
+        },
+        {
+          "optionId": "D",
+          "approachId": "adjacent-duplicates-only",
+          "text": "Mark a roster false only when two adjacent IDs match.",
+          "grade": "incorrect",
+          "feedback": "Input rosters are not sorted. Roster [4,8,4] repeats 4 but has no adjacent equal IDs, so this incorrectly returns true."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Peak memory measures simultaneously live state; independent batches allow completed state to be released.",
+      "details": [
+        "Process rosters sequentially. Create a new hash set, scan the entire current roster, and insert every ID while recording whether membership ever reports a repeat. Write its boolean into the result and release the set before moving to the next roster. Do not retain completed sets or copies of their keys.",
+        "An ID repeated across two different rosters is legal; only repetition inside one roster matters. Release the first roster's set before creating the next. Total work follows all N entries, but peak memory follows the largest current roster K, not the sum of completed rosters.",
+        "“For each roster, create a fresh empty set and a true flag. Check every ID, mark false on a repeated key, and insert it; write the flag, then release the set before the next roster.”: Uniqueness is local to one roster. Once its flag is written, its keys can no longer affect another answer and can be released.",
+        "“Create a separate set per roster, check uniqueness within each, and retain every set until the full output has been returned.”: All booleans are correct, but sets from completed rosters are unnecessary. Retaining them can make peak storage depend on the whole collection rather than the largest roster.",
+        "“Use one set for all rosters without clearing it, marking a roster false whenever its ID was seen anywhere before.”: For [[4],[4]], both rosters are locally unique and should return [true,true]. The global set wrongly marks the second false.",
+        "“Mark a roster false only when two adjacent IDs match.”: Input rosters are not sorted. Roster [4,8,4] repeats 4 but has no adjacent equal IDs, so this incorrectly returns true."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "peak-state-across-independent-batches",
+    "difficulty": "medium",
+    "questionId": "acm-b01-21-q2",
+    "prompt": "For release-set-per-roster, choose expected total time and peak auxiliary space in terms of b rosters, N total entries, and K maximum roster length. Include empty rosters, set creation/release and resizing. Exclude the b required output booleans and read-only inputs; no recursion is used.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "peak",
+          "text": "Expected O(b + N) time, O(K + 1) auxiliary space"
+        },
+        {
+          "optionId": "accumulated",
+          "text": "Expected O(b + N) time, O(b + N) auxiliary space"
+        },
+        {
+          "optionId": "maximum-work",
+          "text": "Expected O(K + 1) time, O(K + 1) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "Expected O(b + N) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "peak"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Scan b roster headers and N entries while retaining only one roster's set.",
+      "details": [
+        "Each roster contributes constant setup/release work plus expected work proportional to its entries, summing to O(b+N). Only the current roster’s set is live, with at most K keys; O(K+1) handles all-empty input too. A roster with K distinct keys realizes this peak. Retaining every completed set would accumulate storage, but this method releases them.",
+        "Time: Expected O(b + N).",
+        "Auxiliary space: O(K + 1).",
+        "“Expected O(b + N) time, O(b + N) auxiliary space”: This counts released sets as live. Peak current-set storage is controlled by K, not the total entries across rosters.",
+        "“Expected O(K + 1) time, O(K + 1) auxiliary space”: The largest roster controls peak space, but every roster and entry is processed for total time.",
+        "“Expected O(b + N) time, O(1) auxiliary space”: When a roster has K distinct IDs, the current set stores all K of them."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "accumulated",
+          "text": "This counts released sets as live. Peak current-set storage is controlled by K, not the total entries across rosters."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "maximum-work",
+          "text": "The largest roster controls peak space, but every roster and entry is processed for total time."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "constant",
+          "text": "When a roster has K distinct IDs, the current set stores all K of them."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "release-set-per-roster",
+  "methodReveal": {
+    "title": "Finish and release one roster at a time",
+    "description": "Process rosters sequentially. Create a new hash set, scan the entire current roster, and insert every ID while recording whether membership ever reports a repeat. Write its boolean into the result and release the set before moving to the next roster. Do not retain completed sets or copies of their keys."
+  }
+}

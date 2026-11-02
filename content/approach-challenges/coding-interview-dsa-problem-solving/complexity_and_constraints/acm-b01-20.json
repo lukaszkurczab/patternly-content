@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-20",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints",
+    "sliding_window"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "bounded-history-versus-total-stream-length",
+    "difficulty": "medium",
+    "questionId": "acm-b01-20-q1",
+    "prompt": "Rolling load ledger. Consume n signed integer values from a forward-only stream. After each value arrives, compute the sum of the last k values seen, or all seen values if fewer than k have arrived. Add that sum to a checksum and return the final checksum. n and k are given in advance; 1 <= k <= n <= 200,000. Values, rolling sums, and checksum fit signed 64-bit. The stream cannot be revisited or inspected ahead. Indexed storage, word addition/subtraction and modulo arithmetic cost constant time. Minimize worst-case total time, then peak auxiliary space. Only the final checksum is output.\n\nExample 1: Input: values=[3,-1,4,2], k=2. Output: 14; successive sums are 3,2,3,6.\nExample 2: Input: values=[5,-2], k=1. Output: 3.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "circular-recent-values",
+          "text": "Use a k-slot circular buffer and a running sum. When replacing a full slot, subtract its old value before adding and storing the new value; add the running sum to the checksum each step.",
+          "grade": "correct",
+          "feedback": "A value is needed only until it leaves the recent k positions. The circular buffer retains exactly that bounded history while the running sum avoids rescanning it."
+        },
+        {
+          "optionId": "B",
+          "approachId": "unbounded-history-with-index",
+          "text": "Append every seen value to a growing array, maintain a running sum, and subtract the array entry k positions back when one exists.",
+          "grade": "partial",
+          "feedback": "The sums are correct and avoid repeated scans, but the complete history remains stored even after older values can never affect another sum."
+        },
+        {
+          "optionId": "C",
+          "approachId": "rescan-recent-history",
+          "text": "Store all values seen so far and recompute each rolling sum by scanning the most recent up to k entries.",
+          "grade": "incorrect",
+          "feedback": "This computes the correct checksum, but after warm-up it repeats a full recent-range scan for every new arrival. Maintaining the rolling sum removes those repeated additions."
+        },
+        {
+          "optionId": "D",
+          "approachId": "never-subtract",
+          "text": "Add every arrival to one running sum and add that sum to the checksum without removing old values.",
+          "grade": "incorrect",
+          "feedback": "For [5,-2], k=1, this adds 5 then 3 for checksum 8; the required rolling sums are 5 and -2, giving 3."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Live history is determined by how long a value can affect future answers, not by the total number of arrivals.",
+      "details": [
+        "Allocate and zero k slots. Keep a write index, count of values seen capped at k, rolling sum and checksum. On arrival, if the buffer is full subtract the current slot; store and add the new value, advance the index modulo k, and add the updated rolling sum to checksum. Return only checksum.",
+        "With k=2 and arrivals 4,7,3, rolling totals are 4,11,10. Before overwriting 4's slot, subtract 4 from the live sum, then add 3. The stream cannot be revisited, so the ring stores values needed for future expiration rather than merely caching redundant input.",
+        "“Use a k-slot circular buffer and a running sum. When replacing a full slot, subtract its old value before adding and storing the new value; add the running sum to the checksum each step.”: A value is needed only until it leaves the recent k positions. The circular buffer retains exactly that bounded history while the running sum avoids rescanning it.",
+        "“Append every seen value to a growing array, maintain a running sum, and subtract the array entry k positions back when one exists.”: The sums are correct and avoid repeated scans, but the complete history remains stored even after older values can never affect another sum.",
+        "“Store all values seen so far and recompute each rolling sum by scanning the most recent up to k entries.”: This computes the correct checksum, but after warm-up it repeats a full recent-range scan for every new arrival. Maintaining the rolling sum removes those repeated additions.",
+        "“Add every arrival to one running sum and add that sum to the checksum without removing old values.”: For [5,-2], k=1, this adds 5 then 3 for checksum 8; the required rolling sums are 5 and -2, giving 3."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "bounded-history-versus-total-stream-length",
+    "difficulty": "medium",
+    "questionId": "acm-b01-20-q2",
+    "prompt": "Analyze circular-recent-values for n arrivals and window length k, with k<=n. Include allocating/zeroing the k slots and every update. No stream history is retained outside the circular buffer. Input and final checksum are excluded; there is no recursion or hashing.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "bounded",
+          "text": "O(n + k) time, O(k) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(nk) time, O(k) auxiliary space"
+        },
+        {
+          "optionId": "all-history",
+          "text": "O(n + k) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "sum-only",
+          "text": "O(n + k) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "bounded"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Initialize k slots and do fixed work per arrival; those slots are auxiliary.",
+      "details": [
+        "Initialization costs O(k). Every arrival then performs constant work, yielding O(n+k), equivalently O(n) under k<=n. The k slots remain live and count as auxiliary; counters and sums add constant storage. Older values are overwritten only once their contributions have been subtracted.",
+        "Time: O(n + k).",
+        "Auxiliary space: O(k).",
+        "“O(nk) time, O(k) auxiliary space”: The running sum removes the need to traverse k retained values after each arrival.",
+        "“O(n + k) time, O(n) auxiliary space”: This is a loose storage bound when k is much smaller than n; the method retains only k values.",
+        "“O(n + k) time, O(1) auxiliary space”: The outgoing value is required for subtraction, and the analyzed method stores k such values in its buffer."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "rescan",
+          "text": "The running sum removes the need to traverse k retained values after each arrival."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "all-history",
+          "text": "This is a loose storage bound when k is much smaller than n; the method retains only k values."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "sum-only",
+          "text": "The outgoing value is required for subtraction, and the analyzed method stores k such values in its buffer."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "circular-recent-values",
+  "methodReveal": {
+    "title": "Reuse k circular slots",
+    "description": "Allocate and zero k slots. Keep a write index, count of values seen capped at k, rolling sum and checksum. On arrival, if the buffer is full subtract the current slot; store and add the new value, advance the index modulo k, and add the updated rolling sum to checksum. Return only checksum."
+  }
+}

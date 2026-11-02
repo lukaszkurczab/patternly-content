@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-02",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b14-02-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "prompt": "A greenhouse records a nonnegative daily quality score in an array scores. For every contiguous nonempty run, define its rating as the run length multiplied by its lowest score. Return the greatest rating across all runs. This rating summarizes a sustained run without allowing one high day to hide a low day. Example: [3, 1, 4, 5, 2] returns 8, from [4, 5] whose minimum is 4 and length is 2. [2, 2, 2] returns 6.",
+    "constraints": [
+      "The immutable array scores has 1 to 200,000 integers, each from 0 to 1,000,000,000.",
+      "Return one integer; input and scalar output are excluded from auxiliary space.",
+      "The product fits in signed 64-bit arithmetic.",
+      "Use a unit-cost model where score, index, and 64-bit product occupy one machine word."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "enumerate-all-runs",
+          "text": "For every left and right endpoint pair, scan the run to find its minimum and compute its rating.",
+          "grade": "incorrect",
+          "feedback": "This considers every run and rescans its contents, doing far more work than needed."
+        },
+        {
+          "optionId": "B",
+          "approachId": "running-minimum-per-start",
+          "text": "For each start index, extend the end index while updating the minimum score; compute each resulting rating.",
+          "grade": "incorrect",
+          "feedback": "The result is correct, but each start may scan most of the array, yielding quadratic work."
+        },
+        {
+          "optionId": "C",
+          "approachId": "sort-scores-and-group",
+          "text": "Sort the scores and treat adjacent sorted values as though they were adjacent original days; calculate candidate ratings from those sorted runs.",
+          "grade": "incorrect",
+          "feedback": "Sorting loses original adjacency. For [10, 1, 10], the two 10s are separated in the input, so they cannot form a run of length 2; the true maximum rating is 10."
+        },
+        {
+          "optionId": "D",
+          "approachId": "resolve-minimum-bounded-runs",
+          "text": "Keep indices of earlier scores in nondecreasing order. When a lower score arrives, use it as the minimum for each popped index and evaluate the span bounded by that index and the current lower score or the remaining stack top. Flush remaining indices using the array end as the right boundary.",
+          "grade": "correct",
+          "feedback": "Each popped index gives a valid span for which its score is a minimum, but equal scores may still remain on the stack, so an early pop can produce a narrower candidate. Later, the leftmost index in an equal-score group is removed after its equal successors; it then covers the full span up to the next strictly lower score on the left and right. Thus the full-width candidate for that minimum is evaluated as well."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "For any candidate minimum, lower scores bound runs that can contain it. Equal scores remain eligible and may be removed one by one: narrower candidates are safe to evaluate, and the leftmost equal minimum later captures the widest span for that height.",
+      "details": [
+        "Scan from left to right with indices whose scores are nondecreasing. When the current score is lower than the top score, remove that top index and evaluate the span between the current position and the new stack top. The current position is a strictly lower right boundary. The new top bounds this candidate on the left; if its score is equal to the removed score, the candidate is narrower, and that equal value remains in the run. Equal-score indices are removed from right to left, so the leftmost equal index is eventually evaluated with the full width between strictly lower boundaries. Multiply each candidate width by its removed score and update the best rating. After the scan, use the array end as the right boundary for each remaining index; the same equal-score rule ensures a widest candidate is evaluated.",
+        "A lower score closes taller candidates at its index. Equal heights may yield narrower candidates first, but the leftmost equal candidate eventually spans their full feasible width. Flush remaining candidates at the array end.",
+        "“For every left and right endpoint pair, scan the run to find its minimum and compute its rating.”: This considers every run and rescans its contents, doing far more work than needed.",
+        "“For each start index, extend the end index while updating the minimum score; compute each resulting rating.”: The result is correct, but each start may scan most of the array, yielding quadratic work.",
+        "“Sort the scores and treat adjacent sorted values as though they were adjacent original days; calculate candidate ratings from those sorted runs.”: Sorting loses original adjacency. For [10, 1, 10], the two 10s are separated in the input, so they cannot form a run of length 2; the true maximum rating is 10.",
+        "“Keep indices of earlier scores in nondecreasing order. When a lower score arrives, use it as the minimum for each popped index and evaluate the span bounded by that index and the current lower score or the remaining stack top. Flush remaining indices using the array end as the right boundary.”: Each popped index gives a valid span for which its score is a minimum, but equal scores may still remain on the stack, so an early pop can produce a narrower candidate. Later, the leftmost index in an equal-score group is removed after its equal successors; it then covers the full span up to the next strictly lower score on the left and right. Thus the full-width candidate for that minimum is evaluated as well."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-02-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "prompt": "Choose the time and auxiliary-space pair for resolve-minimum-bounded-runs. Let n be the number of scores. Input and scalar output are excluded from auxiliary space.",
+    "constraints": [
+      "Each index is added once and removed at most once; the final pass handles indices still present.",
+      "The stack stores indices in one machine word each. Score products use constant-size machine words."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "quadratic-linear",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "nlogn-linear",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-linear"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Total candidate checks are bounded by one push and pop per index.",
+      "details": [
+        "Each index enters and leaves the stack at most once. Some equal-score indices may yield narrower candidates before the leftmost equal index yields the full-width candidate; these extra candidate checks are still bounded by the number of pops. The index stack can retain n entries.",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "resolve-minimum-bounded-runs",
+  "methodReveal": {
+    "title": "Use each score as the minimum of its widest possible run",
+    "description": "Scan from left to right with indices whose scores are nondecreasing. When the current score is lower than the top score, remove that top index and evaluate the span between the current position and the new stack top. The current position is a strictly lower right boundary. The new top bounds this candidate on the left; if its score is equal to the removed score, the candidate is narrower, and that equal value remains in the run. Equal-score indices are removed from right to left, so the leftmost equal index is eventually evaluated with the full width between strictly lower boundaries. Multiply each candidate width by its removed score and update the best rating. After the scan, use the array end as the right boundary for each remaining index; the same equal-score rule ensures a widest candidate is evaluated."
+  }
+}

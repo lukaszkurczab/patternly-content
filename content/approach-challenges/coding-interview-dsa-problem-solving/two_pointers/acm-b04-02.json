@@ -1,7 +1,7 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
   "problemId": "acm-b04-02",
-  "problemVersion": "1",
+  "problemVersion": "2",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "two_pointers",
   "requiredFamilyIds": [
@@ -60,7 +60,14 @@
     "feedback": {
       "type": "approach_choice",
       "reason": "Sorted order allows a one-sided rejection: discard only the smaller current value, because every future value on the other side is at least as large.",
-      "details": {}
+      "details": [
+        "Compare the current code from each log. If one is smaller, it cannot match the other current code or any later code there, so advance only that log. If they are equal, record the code once and advance both past every repetition of it. Stop when either log is exhausted.",
+        "When current codes differ, the smaller cannot match a later code in the other sorted log. On equality skip both equal runs, emitting one shared value rather than every occurrence.",
+        "“Keep one index in each log. Advance the index with the smaller code; equal codes are emitted once and both indices skip the rest of that code's run.”: Advance only the smaller current code; equality emits once and consumes both equal-value runs.",
+        "“Put the distinct codes from the first log in a set, scan the second log, and collect shared codes while suppressing output duplicates.”: Correct for every input, but it stores up to n codes in a set despite the sorted order.",
+        "“Compare every code in the first log with every code in the second and collect matches in a set.”: Correct result, but it repeats cross-input comparisons instead of rejecting smaller values permanently.",
+        "“Whenever the two current codes differ, advance both indices; when they are equal, emit the code and advance both.”: Incorrect: with [1,4,9] and [2,3,4], it skips the shared code 4."
+      ]
     }
   },
   "complexityQuestion": {
@@ -102,29 +109,19 @@
     },
     "feedback": {
       "type": "choice_single",
-      "reason": "Each index advances only forward and can cross its input at most once. Equal runs are skipped as part of those advances. The only auxiliary state is the two indices, a current comparison value, and output bookkeeping; the newly returned array is excluded by the stated model.",
-      "details": {
-        "targetApproachId": "merge-and-skip-equal-runs",
-        "tightWorstCase": {
-          "time": "O(n)",
-          "auxiliarySpace": "O(1)"
-        },
-        "whyTimeIsTight": "At most 2n index advances occur. In worst-case inputs with interleaved values or a long shared prefix, the scan performs a linear number of comparisons; equal-run skipping never revisits an index.",
-        "whySpaceIsConstant": "The algorithm stores two indices and fixed scalar state. It creates no set, copied input, or recursion stack. The returned distinct intersection is output and is excluded.",
-        "otherOptions": {
-          "linear-linear": "This is the time/space profile of the hash-set alternative; the fixed merge scan needs no size-dependent auxiliary structure.",
-          "nlogn-constant": "Sorting already sorted inputs is unnecessary and would add a logarithmic factor.",
-          "quadratic-constant": "This describes comparing every cross-input pair rather than rejecting the smaller current value."
-        },
-        "numericModel": "Codes fit signed 32-bit range; comparisons do not need arithmetic that can overflow. The output has at most n distinct codes.",
-        "storageModel": "Iterative scan; no recursion or input copies. O(1) counts a fixed number of machine words and excludes the returned array only.",
-        "approachOptionRationales": {
-          "merge-and-skip-equal-runs": "Correct: if first[i] < second[j], no later value in second can equal first[i], so skip that full run in first; symmetrically skip a smaller run in second. At equality, emit the value once and skip both complete runs. Each input index is passed at most once.",
-          "hash-one-log": "Correct if membership is checked and duplicate output is suppressed. The set may contain n distinct codes; the sorted merge scan uses the same linear worst-case scan bound with fixed auxiliary state and no set.",
-          "compare-every-cross-pair": "Correct set of values, but compares as many as n² cross-input pairs and needs a set to deduplicate.",
-          "advance-both-on-inequality": "Incorrect. For first=[1,4,9], second=[2,3,4], advancing both from 1 versus 2 next compares 4 versus 3, then 9 versus 4, and misses the common 4. Advancing only the smaller current value preserves it as a candidate."
-        }
-      }
+      "reason": "Forward-only indices consume both logs without auxiliary membership structures.",
+      "details": [
+        "Each index advances only forward and can cross its input at most once. Equal runs are skipped as part of those advances. The only auxiliary state is the two indices, a current comparison value, and output bookkeeping; the newly returned array is excluded by the stated model.",
+        "Time: O(n).",
+        "Auxiliary space: O(1).",
+        "At most 2n index advances occur. In worst-case inputs with interleaved values or a long shared prefix, the scan performs a linear number of comparisons; equal-run skipping never revisits an index.",
+        "The algorithm stores two indices and fixed scalar state. It creates no set, copied input, or recursion stack. The returned distinct intersection is output and is excluded.",
+        "“O(n) time, O(n) auxiliary space”: This is the time/space profile of the hash-set alternative; the fixed merge scan needs no size-dependent auxiliary structure.",
+        "“O(n log n) time, O(1) auxiliary space”: Sorting already sorted inputs is unnecessary and would add a logarithmic factor.",
+        "“O(n²) time, O(1) auxiliary space”: This describes comparing every cross-input pair rather than rejecting the smaller current value.",
+        "Codes fit signed 32-bit range; comparisons do not need arithmetic that can overflow. The output has at most n distinct codes.",
+        "Iterative scan; no recursion or input copies. O(1) counts a fixed number of machine words and excludes the returned array only."
+      ]
     }
   },
   "analyzedApproachId": "merge-and-skip-equal-runs",

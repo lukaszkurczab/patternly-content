@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b05-18",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "sliding_window",
+  "requiredFamilyIds": [
+    "sliding_window",
+    "hash_map_and_set"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b05-18-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "sliding_window",
+    "mentalUnitId": "expand_shrink_update_order",
+    "difficulty": "medium",
+    "prompt": "Nearby Repeated Visitor Alert\n\nProcess a read-once stream of n integer visitor identifiers. Return true as soon as two equal identifiers occur at indices whose positive distance is at most k; otherwise return false after the stream ends. The stream cannot be rewound or randomly accessed.\n\nLimits and assumptions:\n• 0 ≤ n ≤ 200000; 0 ≤ k ≤ n; identifiers are signed 32-bit integers.\n• Indices are zero based; distance exactly k qualifies. The stream itself is excluded from memory accounting. Return only a boolean.\n\nExamples:\n1. stream = [4,8,4], k = 2 → true.\n2. stream = [4,8,4], k = 1 → false.\n3. stream = [7,7], k = 0 → false.\n\nChoose one approach.",
+    "constraints": [
+      "0 ≤ n ≤ 200000; 0 ≤ k ≤ n; identifiers are signed 32-bit integers.",
+      "Indices are zero based; distance exactly k qualifies. The stream itself is excluded from memory accounting. Return only a boolean."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "bounded-set-queue",
+          "text": "If k=0 return false. Keep a hash set and FIFO queue of the preceding at most k identifiers. Check the incoming identifier against the set, returning true on a match; otherwise append it and expire the oldest entry if the queue grows beyond k.",
+          "grade": "correct",
+          "feedback": "Before the first match all retained identifiers are distinct, so set removal is safe. Checking before expiration includes distance exactly k."
+        },
+        {
+          "optionId": "B",
+          "approachId": "unbounded-latest-table",
+          "text": "Store the latest index of every identifier ever seen. Check each repeated identifier distance against k, update its index, and return true when the distance qualifies.",
+          "grade": "partial",
+          "feedback": "This is correct, including repeats outside the allowed distance, but it retains old unrelated identifiers instead of bounding memory by k."
+        },
+        {
+          "optionId": "C",
+          "approachId": "ever-seen-set",
+          "text": "Return true whenever an identifier has appeared anywhere earlier in the stream.",
+          "grade": "incorrect",
+          "feedback": "For [4,8,4] with k=1 the repeat is too far apart; the required result is false."
+        },
+        {
+          "optionId": "D",
+          "approachId": "expire-before-check",
+          "text": "For k>0 retain only the preceding k-1 identifiers before checking each incoming one.",
+          "grade": "incorrect",
+          "feedback": "For [4,8,4], k=2 this expires the first 4 before the final check, missing distance exactly two."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Check before inserting so an event cannot match itself.",
+      "details": [
+        "Return false immediately for k=0. Otherwise maintain a FIFO queue and hash set, initially empty. For each incoming identifier check membership first; return true on a match. If absent insert and enqueue it, then dequeue and delete the oldest identifier when more than k entries are retained. Return false at end.",
+        "Check before inserting so an event cannot match itself. Before the first alert, the active queue contains distinct identifiers, so deleting its oldest value from the set cannot erase another active copy.",
+        "“If k=0 return false. Keep a hash set and FIFO queue of the preceding at most k identifiers. Check the incoming identifier against the set, returning true on a match; otherwise append it and expire the oldest entry if the queue grows beyond k.”: Before the first match all retained identifiers are distinct, so set removal is safe. Checking before expiration includes distance exactly k.",
+        "“Store the latest index of every identifier ever seen. Check each repeated identifier distance against k, update its index, and return true when the distance qualifies.”: This is correct, including repeats outside the allowed distance, but it retains old unrelated identifiers instead of bounding memory by k.",
+        "“Return true whenever an identifier has appeared anywhere earlier in the stream.”: For [4,8,4] with k=1 the repeat is too far apart; the required result is false.",
+        "“For k>0 retain only the preceding k-1 identifiers before checking each incoming one.”: For [4,8,4], k=2 this expires the first 4 before the final check, missing distance exactly two."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b05-18-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "sliding_window",
+    "mentalUnitId": "expand_shrink_update_order",
+    "difficulty": "medium",
+    "prompt": "Analyze only “Check the preceding k entries” as specified in the method reveal. Choose the tightest worst-case running-time and auxiliary-space pair under the stated expected hashing model.",
+    "constraints": [
+      "Expected constant-time hash operations include amortized resizing and all allocated capacity. FIFO operations take constant amortized time without shifting.",
+      "Include the FIFO queue and set; exclude the stream and boolean output. Unit-cost identifier operations and a constant iterative call stack.",
+      "Use n+1 and k+1 to include the n=0 or k=0 boundary; worst-case time is over legal streams. No stream copies are made."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-0",
+          "text": "Expected O(n + 1) time, O(k + 1) auxiliary space"
+        },
+        {
+          "optionId": "pair-1",
+          "text": "Expected O(n² + 1) time, O(k + 1) auxiliary space"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Expected O(n + 1) time, O(n + 1) auxiliary space"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Expected O(n + 1) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each event has bounded expected hash/queue work and distance-bounded storage.",
+      "details": [
+        "Before any match, the queue has no repeated identifiers, so deleting the expired identifier from the set loses no active copy. Each processed item has a bounded number of expected constant-time hash and queue operations. Worst-case n items are processed and at most k+1 are temporarily stored. For k>0 this is O(k) auxiliary storage.",
+        "Time: Expected O(n + 1).",
+        "Auxiliary space: O(k + 1).",
+        "“Expected O(n² + 1) time, O(k + 1) auxiliary space”: Each arriving identifier causes bounded expected set and FIFO work, rather than a scan through all earlier observations.",
+        "“Expected O(n + 1) time, O(n + 1) auxiliary space”: Expiration caps the queue/set at k+1 entries temporarily; retaining all n historical identifiers would be a different method.",
+        "“Expected O(n + 1) time, O(1) auxiliary space”: A no-alert stream may retain k distinct queued identifiers, so working storage grows with k rather than staying constant."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "Each arriving identifier causes bounded expected set and FIFO work, rather than a scan through all earlier observations."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-2",
+          "text": "Expiration caps the queue/set at k+1 entries temporarily; retaining all n historical identifiers would be a different method."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "A no-alert stream may retain k distinct queued identifiers, so working storage grows with k rather than staying constant."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "bounded-set-queue",
+  "methodReveal": {
+    "title": "Check the preceding k entries",
+    "description": "Return false immediately for k=0. Otherwise maintain a FIFO queue and hash set, initially empty. For each incoming identifier check membership first; return true on a match. If absent insert and enqueue it, then dequeue and delete the oldest identifier when more than k entries are retained. Return false at end."
+  }
+}

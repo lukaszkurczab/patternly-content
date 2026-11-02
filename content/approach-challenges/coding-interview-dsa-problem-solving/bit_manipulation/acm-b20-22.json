@@ -1,0 +1,128 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b20-22",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "bit_manipulation",
+  "requiredFamilyIds": [
+    "bit_manipulation"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b20-22-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "bit_manipulation",
+    "mentalUnitId": "bounded_cross_word_field_extraction",
+    "difficulty": "medium",
+    "prompt": "Two adjacent unsigned W-bit storage words A and B represent a bit stream: positions 0..W-1 are A from lowest bit upward; positions W..2W-1 are B from lowest bit upward. Extract k bits starting at offset o and return them as a word with the first extracted bit in result position zero, clearing every higher result bit.\n\nConstraints: 1 <= W <= 64; 0 <= o < W; 1 <= k <= W.\nExample: W=8, A=176, B=13, o=6, k=5 -> 22 (10110 in binary). Edge case: W=8, A=176, B=13, o=0, k=8 -> 176.\n\nChoose the best approach under these constraints.",
+    "constraints": [
+      "W and k are parameters. W-bit logical shifts, AND and OR cost constant time. Shifts discard bits outside the word; all-ones means exactly W set bits. No wider concatenated word is available.",
+      "Inputs are read-only. Include all temporary storage and any call stack; exclude the supplied input and the returned output. No input copy is implicit."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "align-merge-mask",
+          "text": "Set t=A logically shifted right by o. If o+k>W, OR into t the word B shifted left by W-o. Finally AND t with the all-ones word logically shifted right by W-k.",
+          "grade": "correct",
+          "feedback": "Shifting A aligns the low segment. When the field crosses the boundary, B supplies its missing high segment. The final mask clears every bit above the requested k positions."
+        },
+        {
+          "optionId": "B",
+          "approachId": "copy-field-bit-by-bit",
+          "text": "For each j from 0 through k-1, read stream position o+j from A or B as appropriate and set result bit j to that bit.",
+          "grade": "partial",
+          "feedback": "This handles all boundaries and returns the exact field, but reads positions individually when two word segments can be combined directly."
+        },
+        {
+          "optionId": "C",
+          "approachId": "merge-without-final-mask",
+          "text": "Align A and, on a crossing, merge B as above, but return the merged word without masking to k bits.",
+          "grade": "incorrect",
+          "feedback": "Bits beyond the requested field may remain. For W=8, A=255, B=0, o=0, k=3, it returns 255 instead of 7."
+        },
+        {
+          "optionId": "D",
+          "approachId": "reverse-word-order",
+          "text": "Treat B as stream positions 0..W-1 and A as positions W..2W-1, then extract the requested field.",
+          "grade": "incorrect",
+          "feedback": "That changes the stream definition. For W=8, A=1, B=0, o=0, k=1, it returns zero instead of one."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Combine B only when the requested field crosses A's end.",
+      "details": [
+        "Align the suffix of A to the low end. Only if the requested field crosses the word boundary, merge the required low portion of B into the upper positions. Construct a low-k-bit mask from a W-bit all-ones word and clear the unused high positions. The branch avoids a shift by W when o is zero.",
+        "Combine B only when the requested field crosses A's end. Special-case alignment prevents shifting by W, whose semantics need not equal an ordinary shift. Mask the low k bits so unrelated high bits cannot leak into the field.",
+        "“Set t=A logically shifted right by o. If o+k>W, OR into t the word B shifted left by W-o. Finally AND t with the all-ones word logically shifted right by W-k.”: Shifting A aligns the low segment. When the field crosses the boundary, B supplies its missing high segment. The final mask clears every bit above the requested k positions.",
+        "“For each j from 0 through k-1, read stream position o+j from A or B as appropriate and set result bit j to that bit.”: This handles all boundaries and returns the exact field, but reads positions individually when two word segments can be combined directly.",
+        "“Align A and, on a crossing, merge B as above, but return the merged word without masking to k bits.”: Bits beyond the requested field may remain. For W=8, A=255, B=0, o=0, k=3, it returns 255 instead of 7.",
+        "“Treat B as stream positions 0..W-1 and A as positions W..2W-1, then extract the requested field.”: That changes the stream definition. For W=8, A=1, B=0, o=0, k=1, it returns zero instead of one."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b20-22-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "bit_manipulation",
+    "mentalUnitId": "bounded_cross_word_field_extraction",
+    "difficulty": "medium",
+    "prompt": "For align-merge-mask, choose the tightest worst-case time and auxiliary-space pair. Let W be the payload width and k the extracted field length. Use word operations, with no wider word or intermediate bit array.",
+    "constraints": [
+      "W and k are parameters. W-bit logical shifts, AND and OR cost constant time. Shifts discard bits outside the word; all-ones means exactly W set bits. No wider concatenated word is available.",
+      "Inputs are read-only. Include all temporary storage and any call stack; exclude the supplied input and the returned output. No input copy is implicit."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "O(1) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "O(k) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "O(W) time, O(W) auxiliary space"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "O(1) time, O(W) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-1"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One or two word segments require a fixed number of shifts and masks.",
+      "details": [
+        "A fixed number of shifts and mask operations handles either one or two word segments. Only the merged word and mask are auxiliary; there is no array, wider concatenation or recursion.",
+        "Time: O(1).",
+        "Auxiliary space: O(1).",
+        "W and k are parameters. W-bit logical shifts, AND and OR cost constant time. Shifts discard bits outside the word; all-ones means exactly W set bits. No wider concatenated word is available.",
+        "“O(k) time, O(1) auxiliary space”: This describes copying each requested bit, not the fixed segment merge.",
+        "“O(W) time, O(W) auxiliary space”: The analyzed method does not unpack either payload word.",
+        "“O(1) time, O(W) auxiliary space”: Only a few word scalars, not a width-sized array, are used."
+      ]
+    }
+  },
+  "analyzedApproachId": "align-merge-mask",
+  "methodReveal": {
+    "title": "Method to analyze",
+    "description": "Align the suffix of A to the low end. Only if the requested field crosses the word boundary, merge the required low portion of B into the upper positions. Construct a low-k-bit mask from a W-bit all-ones word and clear the unused high positions. The branch avoids a shift by W when o is zero."
+  }
+}

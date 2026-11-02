@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-22",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals",
+    "math_and_geometry"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b11-22-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "merge_overlaps",
+    "difficulty": "medium",
+    "prompt": "Repeated beacon silence\n\nA beacon repeats on a cycle of length P. Each silence record is (start,duration): starting at phase start, the beacon is silent for duration consecutive units while phase wraps from P back to 0. Return the total silent duration within one cycle, counting overlapping records only once. Records are unsorted and immutable. Phase intervals are half-open; silence includes its starting phase and excludes its ending phase.\n\nInput: P=12, records=[(10,4),(1,4),(7,2)]\nOutput: 9\nThe first record covers [10,12) and [0,2). Together the first two cover [10,12) and [0,5); the third adds [7,9).\n\nInput: P=8, records=[(3,8),(6,1)]\nOutput: 8\nA duration equal to P covers the whole cycle.\n\nConstraints: 0 ≤ n ≤ 200000; 1 ≤ P ≤ 1000000000; integer 0 ≤ start < P and 1 ≤ duration ≤ P. Treat time as continuous. Use comparison-based endpoint ordering rather than iterating through phases. Return one integer.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "split-wrap-and-measure",
+          "text": "If a duration equals P, return P. Otherwise turn a nonwrapping record into [start,start+duration), and a wrapping record into [start,P) plus [0,start+duration−P). Sort the resulting pieces by start, merge their linear coverage, and sum lengths.",
+          "grade": "correct",
+          "feedback": "Splitting at the cycle boundary preserves exactly one cycle’s coverage. The resulting ordinary intervals can be combined without counting overlap twice; linear measure is additive even when the final covered set connects across phase zero."
+        },
+        {
+          "optionId": "B",
+          "approachId": "modulo-both-ends",
+          "text": "Replace each record with [start,(start+duration) mod P), discard any whose end is at most its start, then merge the remaining intervals.",
+          "grade": "incorrect",
+          "feedback": "For P=12 and record (10,4), this discards the record and returns 0 instead of 4. Modulo changes the endpoint but does not represent the two pieces of wrapping coverage."
+        },
+        {
+          "optionId": "C",
+          "approachId": "cap-summed-durations",
+          "text": "Sum every duration and cap the result at P.",
+          "grade": "incorrect",
+          "feedback": "For P=12 and records [(1,3),(1,3)], only [1,4) is silent. The answer is 3, but this method returns 6; capping cannot correct overlaps."
+        },
+        {
+          "optionId": "D",
+          "approachId": "integer-phase-checks",
+          "text": "For each integer phase from 0 through P−1, test every record for coverage of the unit interval beginning there, and count covered units.",
+          "grade": "incorrect",
+          "feedback": "Integer endpoints make this count correct, but it enumerates the potentially billion-unit cycle and rescans all records. Boundary splitting and ordering avoid coordinate-domain brute force."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Normalize wrapping coverage by splitting at the cycle boundary, preserving full-cycle and overlap semantics.",
+      "details": [
+        "Scan for any full-cycle record. If absent, allocate an array with capacity 2n for normalized pieces, using a logical length, and sort those pieces by start with iterative bottom-up merge sort and a reusable buffer. Sum their union in one scan using current start/end and total; create no merged output list.",
+        "Split a wrapping silence at phase P into two linear pieces. A duration P covers the whole cycle directly. Merge normalized pieces before summing so overlap is counted once, independent of the numerical cycle length.",
+        "“If a duration equals P, return P. Otherwise turn a nonwrapping record into [start,start+duration), and a wrapping record into [start,P) plus [0,start+duration−P). Sort the resulting pieces by start, merge their linear coverage, and sum lengths.”: Splitting at the cycle boundary preserves exactly one cycle’s coverage. The resulting ordinary intervals can be combined without counting overlap twice; linear measure is additive even when the final covered set connects across phase zero.",
+        "“Replace each record with [start,(start+duration) mod P), discard any whose end is at most its start, then merge the remaining intervals.”: For P=12 and record (10,4), this discards the record and returns 0 instead of 4. Modulo changes the endpoint but does not represent the two pieces of wrapping coverage.",
+        "“Sum every duration and cap the result at P.”: For P=12 and records [(1,3),(1,3)], only [1,4) is silent. The answer is 3, but this method returns 6; capping cannot correct overlaps.",
+        "“For each integer phase from 0 through P−1, test every record for coverage of the unit interval beginning there, and count covered units.”: Integer endpoints make this count correct, but it enumerates the potentially billion-unit cycle and rescans all records. Boundary splitting and ordering avoid coordinate-domain brute force."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-22-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "merge_overlaps",
+    "difficulty": "medium",
+    "prompt": "For split-wrap-and-measure, n is the record count. Analyze the worst case, which has no full-cycle shortcut. Count normalized pieces and sort buffer; the result is one integer. Choose the tightest standard pair.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(nP), auxiliary space O(P)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O(n log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O(n log n), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(n), auxiliary space O(n)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-2"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "At most 2n pieces are comparison-sorted; phases themselves are never enumerated.",
+      "details": [
+        "There are at most 2n linear pieces. Building and measuring them is linear; comparison sorting takes O(n log n). The normalized array and reusable buffer are O(n) auxiliary space with constant iterative scan state. A full-cycle early return improves some inputs, not this worst-case bound.",
+        "Time: O(n log n).",
+        "Auxiliary space: O(n).",
+        "At most two pieces per record; iterative comparison merge sort; constant-time coordinate arithmetic.",
+        "“Time O(nP), auxiliary space O(P)”: The cycle phases are not enumerated. At most two pieces per record are generated, independent of P.",
+        "“Time O(n log n), auxiliary space O(1)”: Normalized pieces and the reusable sorting buffer are auxiliary arrays; they do not become excluded output because the result is a scalar.",
+        "“Time O(n), auxiliary space O(n)”: A full-cycle shortcut helps some inputs, but without it the normalized pieces still require comparison sorting in the specified method."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "The cycle phases are not enumerated. At most two pieces per record are generated, independent of P."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "Normalized pieces and the reusable sorting buffer are auxiliary arrays; they do not become excluded output because the result is a scalar."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-4",
+          "text": "A full-cycle shortcut helps some inputs, but without it the normalized pieces still require comparison sorting in the specified method."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "split-wrap-and-measure",
+  "methodReveal": {
+    "title": "Analyze split-wrap-and-measure",
+    "description": "Scan for any full-cycle record. If absent, allocate an array with capacity 2n for normalized pieces, using a logical length, and sort those pieces by start with iterative bottom-up merge sort and a reusable buffer. Sum their union in one scan using current start/end and total; create no merged output list."
+  }
+}

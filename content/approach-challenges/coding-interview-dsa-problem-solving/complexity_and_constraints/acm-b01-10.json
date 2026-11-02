@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-10",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints"
+  ],
+  "difficulty": "easy",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "explicit-output-size-lower-bound",
+    "difficulty": "easy",
+    "questionId": "acm-b01-10-q1",
+    "prompt": "Trial schedule. You receive read-only arrays rooms and modes containing fixed-size integer identifiers. Return a flat array of ordered pairs: every room entry paired with every mode entry. Preserve duplicates. The pairs must appear in room-index order, and for each room in mode-index order. There are 1 <= n <= 1,000 rooms and 1 <= m <= 1,000 modes, with n*m <= 200,000. IDs fit signed 32-bit words. The result must contain actual pairs, not a lazy iterator or compact recipe. Choose minimum worst-case total time, breaking equal-time ties by smaller auxiliary storage.\n\nExample 1: Input: rooms=[8,3], modes=[4,4]. Output: [[8,4],[8,4],[3,4],[3,4]].\nExample 2: Input: rooms=[2], modes=[9,1]. Output: [[2,9],[2,1]].\n\nThe output API allocates exactly n*m pair slots and lets you fill each slot directly. Allocation/initialization takes work proportional to its size; writing a fixed-size pair takes constant time. Result storage is required output and is excluded from auxiliary space.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "write-each-combination",
+          "text": "Allocate n*m result slots. For each room index, visit every mode index and write that pair directly into the next result slot.",
+          "grade": "correct",
+          "feedback": "Each required pair is emitted exactly once in the requested order. The size of the explicit result itself forces work for every combination."
+        },
+        {
+          "optionId": "B",
+          "approachId": "stage-combinations",
+          "text": "Build a separate temporary list of all pairs in the requested order, then allocate the result and copy all pairs into it.",
+          "grade": "partial",
+          "feedback": "All pairs and duplicates are preserved, but the temporary list duplicates the required result. Directly filling the result removes that extra storage."
+        },
+        {
+          "optionId": "C",
+          "approachId": "zip-by-position",
+          "text": "Pair rooms[i] with modes[i] for indices present in both arrays and return those pairs.",
+          "grade": "incorrect",
+          "feedback": "For rooms=[2], modes=[9,1], this returns only [[2,9]] and misses [2,1]. Each room must pair with every mode."
+        },
+        {
+          "optionId": "D",
+          "approachId": "deduplicate-before-pairing",
+          "text": "Remove duplicate identifiers from each array, then emit all combinations of the remaining identifiers.",
+          "grade": "incorrect",
+          "feedback": "Duplicates represent separate entries and must remain. For rooms=[8], modes=[4,4], this emits one pair instead of the required two."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "An explicit result may require more work than reading the input; minimize overhead beyond writing the required entries.",
+      "details": [
+        "Allocate the final n*m pair array. Iterate room indices from first to last; inside each, iterate mode indices from first to last. Write the current two identifiers into the next result slot. Retain only indices and the output offset, and return that array.",
+        "With two room entries and three mode entries, six pair slots must be written, even when some identifiers repeat. Each outer room selects one consecutive block of modes. The multiplicative cost comes from required output, not merely from seeing two nested loops.",
+        "“Allocate n*m result slots. For each room index, visit every mode index and write that pair directly into the next result slot.”: Each required pair is emitted exactly once in the requested order. The size of the explicit result itself forces work for every combination.",
+        "“Build a separate temporary list of all pairs in the requested order, then allocate the result and copy all pairs into it.”: All pairs and duplicates are preserved, but the temporary list duplicates the required result. Directly filling the result removes that extra storage.",
+        "“Pair rooms[i] with modes[i] for indices present in both arrays and return those pairs.”: For rooms=[2], modes=[9,1], this returns only [[2,9]] and misses [2,1]. Each room must pair with every mode.",
+        "“Remove duplicate identifiers from each array, then emit all combinations of the remaining identifiers.”: Duplicates represent separate entries and must remain. For rooms=[8], modes=[4,4], this emits one pair instead of the required two."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "explicit-output-size-lower-bound",
+    "difficulty": "easy",
+    "questionId": "acm-b01-10-q2",
+    "prompt": "For write-each-combination, what are worst-case time and peak auxiliary space in terms of positive n and m? Include output allocation/initialization and all pair writes. Pairs contain two fixed-size words copied by value. The required result is excluded from auxiliary space; no temporary pair list is built.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "product",
+          "text": "O(nm) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sum",
+          "text": "O(n + m) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "product-storage",
+          "text": "O(nm) time, O(nm) auxiliary space"
+        },
+        {
+          "optionId": "square-sum",
+          "text": "O((n + m)²) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "product"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Writing the required n*m pairs determines time; only loop counters are auxiliary.",
+      "details": [
+        "There are exactly n*m output slots. Initialization and writing each pair take O(nm) total time, and the explicit output requires that much work in the worst case. Because n and m are positive, any loop setup or input visits are covered by this bound. Only counters and an offset are auxiliary. Output size does not make auxiliary space O(nm). The bound O((n+m)²) is loose when one input is much smaller than the other.",
+        "Time: O(nm).",
+        "Auxiliary space: O(1).",
+        "“O(n + m) time, O(1) auxiliary space”: Reading each input once is insufficient to write all n*m explicitly required pairs when both inputs grow.",
+        "“O(nm) time, O(nm) auxiliary space”: That counts the required returned array as auxiliary storage, contrary to the stated convention.",
+        "“O((n + m)²) time, O(1) auxiliary space”: This is a valid loose upper bound but not the tightest expression: with m=1, the method writes only n pairs."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "sum",
+          "text": "Reading each input once is insufficient to write all n*m explicitly required pairs when both inputs grow."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "product-storage",
+          "text": "That counts the required returned array as auxiliary storage, contrary to the stated convention."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "square-sum",
+          "text": "This is a valid loose upper bound but not the tightest expression: with m=1, the method writes only n pairs."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "write-each-combination",
+  "methodReveal": {
+    "title": "Write combinations in output order",
+    "description": "Allocate the final n*m pair array. Iterate room indices from first to last; inside each, iterate mode indices from first to last. Write the current two identifiers into the next result slot. Retain only indices and the output offset, and return that array."
+  }
+}

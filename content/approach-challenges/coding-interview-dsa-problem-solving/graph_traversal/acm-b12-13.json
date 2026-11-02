@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-13",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b12-13-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "grid_as_graph",
+    "difficulty": "hard",
+    "prompt": "One temporary opening. A grid uses 0 for a free cell and 1 for a blocked cell. Move between cells sharing a side. You may enter at most one blocked cell during the entire walk; entering it consumes the opening allowance. Return the minimum number of moves from top-left to bottom-right, or -1 if impossible. Both endpoints are free; a one-cell grid needs zero moves.\n\nInput: read-only R by C grid, 1 <= R,C <= 600 and R*C <= 200000. Every move costs one. Revisiting cells is permitted, but entering a blocked cell again would consume another allowance and is therefore illegal after the first such entry.\n\nExample 1: grid=[[0,1,0],[1,1,0]], output=3 via (0,0)->(0,1)->(0,2)->(1,2).\nExample 2: grid=[[0,1,1,0]], output=-1.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "bfs-opening-states",
+          "text": "Run BFS with states (row,column,openingUsed), keeping separate distances for unused and used allowance. Enter a wall only from an unused state, changing the allowance to used. Return the smaller target-state distance.",
+          "grade": "correct",
+          "feedback": "Two arrivals at one location can have different legal futures. Keeping allowance in the state preserves those alternatives; unit-cost BFS then minimizes moves."
+        },
+        {
+          "optionId": "B",
+          "approachId": "single-cell-visited",
+          "text": "Run BFS with an allowance field in the queue but only one permanent visited bit per cell, accepting whichever arrival is first.",
+          "grade": "incorrect",
+          "feedback": "For grid=[[0,0,1],[1,0,1],[0,1,0]], scan neighbors in the order Up, Down, Left, Right. The correct result is 4 via (0,0)->(0,1)->(1,1)->(1,2)->(2,2), opening only (1,2). The flawed BFS processes (1,0) with the allowance used before (0,1), so it marks (1,1) used at distance 2 and suppresses its equally short unused arrival. It then cannot enter (1,2) and incorrectly returns -1. A cell needs separate allowance states."
+        },
+        {
+          "optionId": "C",
+          "approachId": "open-every-wall",
+          "text": "Treat every blocked cell as free and run ordinary BFS.",
+          "grade": "incorrect",
+          "feedback": "For grid=[[0,1,1,0]], this returns 3, but the route enters two blocked cells. Only one is allowed, so the answer is -1."
+        },
+        {
+          "optionId": "D",
+          "approachId": "try-each-wall",
+          "text": "For each blocked cell, temporarily treat only that cell as free in a search without modifying the input, run ordinary BFS, and take the minimum; also test a search with no wall opened.",
+          "grade": "partial",
+          "feedback": "A minimum legal route never needs to repeat a location, so any route using an opening uses just one wall once and is found in the corresponding run. The method is correct, but repeats traversal for many candidate walls; the allowance-state search combines those decisions."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The search state must contain the remaining resource when consuming it changes which transitions are available later.",
+      "details": [
+        "Initialize two distance entries per cell to -1. Set the unused state of the start to zero and enqueue it. Pop a state, inspect in-bounds side neighbors, and compute the new used bit by adding the neighbor cell value. Reject a transition if that sum exceeds one. Assign and enqueue each unseen legal state. Process all reachable states, then return the smaller nonnegative target distance or -1.",
+        "The same cell with its opening unused and already used represents different future possibilities. Add a blocked neighbor's cost to that state bit and reject a second opening. One visited flag per cell would merge incompatible states.",
+        "“Run BFS with states (row,column,openingUsed), keeping separate distances for unused and used allowance. Enter a wall only from an unused state, changing the allowance to used. Return the smaller target-state distance.”: Two arrivals at one location can have different legal futures. Keeping allowance in the state preserves those alternatives; unit-cost BFS then minimizes moves.",
+        "“Run BFS with an allowance field in the queue but only one permanent visited bit per cell, accepting whichever arrival is first.”: For grid=[[0,0,1],[1,0,1],[0,1,0]], scan neighbors in the order Up, Down, Left, Right. The correct result is 4 via (0,0)->(0,1)->(1,1)->(1,2)->(2,2), opening only (1,2). The flawed BFS processes (1,0) with the allowance used before (0,1), so it marks (1,1) used at distance 2 and suppresses its equally short unused arrival. It then cannot enter (1,2) and incorrectly returns -1. A cell needs separate allowance states.",
+        "“Treat every blocked cell as free and run ordinary BFS.”: For grid=[[0,1,1,0]], this returns 3, but the route enters two blocked cells. Only one is allowed, so the answer is -1.",
+        "“For each blocked cell, temporarily treat only that cell as free in a search without modifying the input, run ordinary BFS, and take the minimum; also test a search with no wall opened.”: A minimum legal route never needs to repeat a location, so any route using an opening uses just one wall once and is found in the corresponding run. The method is correct, but repeats traversal for many candidate walls; the allowance-state search combines those decisions."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-13-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "grid_as_graph",
+    "difficulty": "hard",
+    "prompt": "Analyze bfs-opening-states. There are R*C cells and two allowance states per cell. Initialize the full distance table and reserve a queue of 2*R*C fixed-size states. Generate four neighbors directly per state; do not build adjacency lists. Array/index/queue operations are constant time, with no hashing, recursion, amortized growth, shifting or copying. Exclude the input and scalar result, and include distances and queue.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(RC) time, O(RC) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(RC) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O((RC)²) time, O(RC) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(R + C) time, O(RC) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "At most two states per grid cell each inspect four side neighbors.",
+      "details": [
+        "The option “O(RC) time, O(RC) auxiliary space” is tight: at most 2RC states each inspect four neighbors, and initialization scans all state entries. Both distances and queue use O(RC). The option “O(RC) time, O(1) auxiliary space” drops the state and frontier storage. The option “O((RC)²) time, O(RC) auxiliary space” models a fresh traversal per possible opening, which the revealed method avoids. The option “O(R + C) time, O(RC) auxiliary space” only counts dimensions and omits the grid-wide state initialization.",
+        "Time: O(RC).",
+        "Auxiliary space: O(RC)."
+      ]
+    }
+  },
+  "analyzedApproachId": "bfs-opening-states",
+  "methodReveal": {
+    "title": "BFS with one resource bit",
+    "description": "Initialize two distance entries per cell to -1. Set the unused state of the start to zero and enqueue it. Pop a state, inspect in-bounds side neighbors, and compute the new used bit by adding the neighbor cell value. Reject a transition if that sum exceeds one. Assign and enqueue each unseen legal state. Process all reachable states, then return the smaller nonnegative target distance or -1."
+  }
+}

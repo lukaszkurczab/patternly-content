@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-03",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b14-03-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "medium",
+    "prompt": "A workshop receives one load value per shift. For each shift i, return the length of the longest contiguous suffix ending at i in which every load is at most load[i]. Include shift i itself. Loads may repeat and may be negative. Example: [8, 3, 3, 6, 9] returns [1, 1, 2, 3, 5]. Choose the best approach.",
+    "constraints": [
+      "The input is immutable; n is between 1 and 200,000. All integers, indices, counts, and arithmetic results fit in signed 64-bit machine words; comparisons and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "merge-load-blocks",
+          "text": "Scan left to right with a stack of (load, span) pairs. Start span at 1; pop all top loads at most the current load and add their spans. Emit the span and push the current pair.",
+          "grade": "correct",
+          "feedback": "Each popped block is contiguous immediately before the accumulated suffix and contains no value larger than the current load. The first remaining larger load is exactly the stopping boundary."
+        },
+        {
+          "optionId": "B",
+          "approachId": "previous-larger-index",
+          "text": "Keep indices in strictly decreasing load order. Pop loads at most the current load; emit i minus the top index, or i+1 if empty, then push i.",
+          "grade": "correct",
+          "feedback": "The remaining top is the nearest earlier strictly larger load. Its distance gives the same suffix length without storing block sizes."
+        },
+        {
+          "optionId": "C",
+          "approachId": "strict-block-merge",
+          "text": "Use load/span blocks, but pop only loads strictly smaller than the current load.",
+          "grade": "incorrect",
+          "feedback": "Equal loads belong to the suffix too. For [3, 3], this emits [1, 1] instead of [1, 2]."
+        },
+        {
+          "optionId": "D",
+          "approachId": "backward-per-shift",
+          "text": "For each shift, walk backward until a strictly larger load or the array start is reached.",
+          "grade": "incorrect",
+          "feedback": "This computes the requested spans, but an increasing sequence repeats nearly the entire prefix search for each shift, making it clearly inefficient at the input limit."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Compress dominated earlier positions into blocks while preserving their total span.",
+      "details": [
+        "For each load begin a new span of one. Merge top blocks whose load is at most this load, summing their spans, then emit and push the combined block. A larger top stays as the stopping boundary.",
+        "Merged blocks summarize consecutive earlier loads no greater than the current load. Sum their spans rather than their values. A remaining strictly greater top stops the span, so equal loads must merge too.",
+        "“Scan left to right with a stack of (load, span) pairs. Start span at 1; pop all top loads at most the current load and add their spans. Emit the span and push the current pair.”: Each popped block is contiguous immediately before the accumulated suffix and contains no value larger than the current load. The first remaining larger load is exactly the stopping boundary.",
+        "“Keep indices in strictly decreasing load order. Pop loads at most the current load; emit i minus the top index, or i+1 if empty, then push i.”: The remaining top is the nearest earlier strictly larger load. Its distance gives the same suffix length without storing block sizes.",
+        "“Use load/span blocks, but pop only loads strictly smaller than the current load.”: Equal loads belong to the suffix too. For [3, 3], this emits [1, 1] instead of [1, 2].",
+        "“For each shift, walk backward until a strictly larger load or the array start is reached.”: This computes the requested spans, but an increasing sequence repeats nearly the entire prefix search for each shift, making it clearly inefficient at the input limit."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-03-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "medium",
+    "prompt": "For merge-load-blocks, choose the tightest worst-case time and auxiliary-space pair. Let n be the number of shifts. Emit each answer into a separately allocated result array; no prefix is copied.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each span block is inserted once and merged away at most once.",
+      "details": [
+        "A merged span block is popped only once, then represented by the newly pushed aggregate. Summing span values is constant-time word arithmetic; it does not revisit the block's original shifts. Hence total work is O(n), while strictly decreasing loads retain n separate blocks. Sorting would lose arrival-order span semantics.",
+        "Time: O(n).",
+        "Auxiliary space: O(n)."
+      ]
+    }
+  },
+  "analyzedApproachId": "merge-load-blocks",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "For each load begin a new span of one. Merge top blocks whose load is at most this load, summing their spans, then emit and push the combined block. A larger top stays as the stopping boundary."
+  }
+}

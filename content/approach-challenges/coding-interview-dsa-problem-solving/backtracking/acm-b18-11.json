@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b18-11",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "backtracking",
+  "requiredFamilyIds": [
+    "backtracking"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b18-11-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "choose_backtracking_state",
+    "prompt": "Symbol Expansion\n\nGiven a pattern over symbols a..d and a lowercase text, return whether each distinct pattern symbol can be assigned one nonempty text string so that substituting and concatenating the assignments yields exactly text. Equal symbols must use equal strings; different symbols must use different strings.\n\nExamples:\npattern=\"aba\", text=\"redbluered\" -> true with a=\"red\", b=\"blue\".\npattern=\"ab\", text=\"xx\" -> false: the only two nonempty pieces are equal.\npattern=\"aa\", text=\"catcat\" -> true.\n\nConstraints: 1 <= pattern.length <= 8; 1 <= M=text.length <= 24. No text normalization; strings are compared exactly.",
+    "constraints": [],
+    "difficulty": "hard",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "acm-b18-11-search",
+          "text": "Reuse a symbol’s assigned string whenever it recurs. For an unassigned symbol try every nonempty next text piece that differs from all existing assignments, and remove only that new binding on return.",
+          "grade": "correct",
+          "feedback": "The two positions enforce order and full consumption. The existing bindings enforce consistency and injectivity; a binding introduced before this call must survive its return."
+        },
+        {
+          "optionId": "B",
+          "approachId": "acm-b18-11-alternative-1",
+          "text": "Allow two different symbols to share an assigned string.",
+          "grade": "incorrect",
+          "feedback": "For pattern=\"ab\", text=\"xx\", this accepts a=\"x\", b=\"x\", which violates the different-symbol rule."
+        },
+        {
+          "optionId": "C",
+          "approachId": "acm-b18-11-alternative-2",
+          "text": "When a repeated symbol matches its assigned string, delete that existing binding before recursively processing the rest of the pattern.",
+          "grade": "incorrect",
+          "feedback": "For pattern=\"aaba\", text=\"xxyw\", the second a matches x but deletes a=\"x\" before b is processed; the final a can then be rebound to w, falsely accepting an inconsistent mapping."
+        },
+        {
+          "optionId": "D",
+          "approachId": "acm-b18-11-extra-work",
+          "text": "Copy the four-entry binding map for every branch, storing newly assigned pieces as fresh character strings.",
+          "grade": "partial",
+          "feedback": "This is correct, but copying long candidate strings is unnecessary: interval bindings plus undo preserve the same search while avoiding that allocation work."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The two positions enforce order and full consumption. The existing bindings enforce consistency and injectivity; a binding introduced before this call must survive its return.",
+      "details": [
+        "Carry pattern/text positions and four optional interval bindings into text. For a bound symbol compare its interval with the next text characters. Otherwise try every nonempty remaining prefix, reject equality with any existing binding, bind it, recurse, and unbind on return. Accept only if both inputs end together.",
+        "A symbol keeps one exact text binding across every occurrence, and distinct symbols must not share a binding. Store intervals rather than copied substrings. Undo only a newly created binding; existing bindings remain fixed within the branch.",
+        "“Reuse a symbol’s assigned string whenever it recurs. For an unassigned symbol try every nonempty next text piece that differs from all existing assignments, and remove only that new binding on return.”: The two positions enforce order and full consumption. The existing bindings enforce consistency and injectivity; a binding introduced before this call must survive its return.",
+        "“Allow two different symbols to share an assigned string.”: For pattern=\"ab\", text=\"xx\", this accepts a=\"x\", b=\"x\", which violates the different-symbol rule.",
+        "“When a repeated symbol matches its assigned string, delete that existing binding before recursively processing the rest of the pattern.”: For pattern=\"aaba\", text=\"xxyw\", the second a matches x but deletes a=\"x\" before b is processed; the final a can then be rebound to w, falsely accepting an inconsistent mapping.",
+        "“Copy the four-entry binding map for every branch, storing newly assigned pieces as fresh character strings.”: This is correct, but copying long candidate strings is unnecessary: interval bindings plus undo preserve the same search while avoiding that allocation work."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b18-11-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "backtracking",
+    "mentalUnitId": "choose_backtracking_state",
+    "prompt": "Analyze `acm-b18-11-search` only. Let C count candidate-prefix trials plus calls, and X count all text-character comparisons actually performed, including rejection against existing bindings. Use four interval bindings (start,length), no hashing, and compare intervals character by character with early exit. Do not copy candidate strings. Choose the tightest stated time and auxiliary-space pair. Count recursion and mutable working state; exclude supplied input and returned output storage, but include copying work in time. Primitive integer/index operations and preallocated-array updates cost constant time; dynamic appends are amortized constant time. No hashing is used unless explicitly stated.",
+    "constraints": [],
+    "difficulty": "hard",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(C + X) time, O(pattern.length) auxiliary space"
+        },
+        {
+          "optionId": "cost-0",
+          "text": "O(C) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(C + X) time, O(M·pattern.length) auxiliary space"
+        },
+        {
+          "optionId": "cost-2",
+          "text": "O(pattern.length + M) time, O(pattern.length) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Separate candidate-trial overhead from actual character equality checks.",
+      "details": [
+        "Calls and candidate-trial overhead contribute C. Each existing-binding check scans at most four bindings and its actual character work is accounted for by X. All bindings are interval pairs, so no uncounted substring allocation occurs.",
+        "There are at most four interval pairs, and one frame per consumed pattern symbol. No result strings or visited-state table are built.",
+        "Let C count candidate-prefix trials plus calls, and X count all text-character comparisons actually performed, including rejection against existing bindings. Use four interval bindings (start,length), no hashing, and compare intervals character by character with early exit. Do not copy candidate strings.",
+        "“O(C) time, O(1) auxiliary space”: This omits variable-length text comparisons and recursion.",
+        "“O(C + X) time, O(M·pattern.length) auxiliary space”: Bindings are interval pairs into input, not copied strings in every frame.",
+        "“O(pattern.length + M) time, O(pattern.length) auxiliary space”: Different candidate splits can require extensive branching and repeated comparisons."
+      ]
+    }
+  },
+  "analyzedApproachId": "acm-b18-11-search",
+  "methodReveal": {
+    "title": "Bind an unmapped symbol for one branch",
+    "description": "Carry pattern/text positions and four optional interval bindings into text. For a bound symbol compare its interval with the next text characters. Otherwise try every nonempty remaining prefix, reject equality with any existing binding, bind it, recurse, and unbind on return. Accept only if both inputs end together."
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b10-09",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "tree_traversal",
+  "requiredFamilyIds": [
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b10-09-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "tree_structure_and_recursive_contract",
+    "difficulty": "medium",
+    "prompt": "Restore a Layout. A token array encodes a binary tree by writing a node integer first, then its left subtree, then its right subtree. An absent subtree is written as #. Return a newly allocated tree with exactly the encoded shape and labels. An empty tree is encoded as [#].\n\nExample 1: Input: [5,2,#,#,8,#,#]. Output: 5(2(-,-),8(-,-)). Example 2: Input: [4,#,6,#,#]. Output: 4(-,6(-,-)). Example 3: Input: [#]. Output: -. The output notation x(left,right) uses - for missing children.\n\nConstraints: 0 <= n <= 200000 non-null nodes and exactly 2n+1 tokens; integer tokens are signed 32-bit values, possibly repeated. # is a distinct token, not an integer. The input is guaranteed to encode exactly one valid tree with no trailing tokens. The input is immutable. Return only the tree, not an index into the token array.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "decode-slots",
+          "approachId": "decode-slots",
+          "text": "Consume tokens once with a cursor and explicit frames for nodes awaiting left or right children. A # fills the next pending child slot with null; an integer creates its node and makes its left slot the next obligation.",
+          "grade": "correct",
+          "feedback": "The encoding order determines the next unfilled slot. Completing a node resumes its parent’s next slot, so markers preserve exact boundaries."
+        },
+        {
+          "optionId": "decode-rescans",
+          "approachId": "decode-rescans",
+          "text": "For each non-null subtree, scan its token segment to locate the end of its left subtree by tracking pending slots, then construct the children by repeating those segment scans recursively with explicit frames.",
+          "grade": "partial",
+          "feedback": "Slot counting locates valid boundaries, so construction is exact. On long branches, repeated scans overlap; one shared advancing cursor avoids this cost."
+        },
+        {
+          "optionId": "decode-drop-markers",
+          "approachId": "decode-drop-markers",
+          "text": "Discard # tokens and insert the remaining integers into a binary search tree in their encountered order, sending equal values right.",
+          "grade": "incorrect",
+          "feedback": "Labels do not order the layout. [5,8,#,#,2,#,#] encodes left child 8 and right child 2, but search-tree insertion reverses those positions."
+        },
+        {
+          "optionId": "decode-level-slots",
+          "approachId": "decode-level-slots",
+          "text": "Read the tokens left to right but assign child slots in breadth-first order, starting with root, then all slots at each depth.",
+          "grade": "incorrect",
+          "feedback": "The stream completes a left subtree before the right one. [1,2,3,#,#,#,4,#,#] means 1(2(3(-,-),-),4(-,-)), not the level-order layout."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Missing-child markers define subtree boundaries; decoding must consume exactly one complete subtree at each pending slot.",
+      "details": [
+        "Read the root token first. For an integer create the root and push its frame, initially awaiting a left child. Read each next token into the top frame’s next slot; advance that frame to right or completed. Push a new frame for an integer child. Pop completed frames before the next token. A root # returns null. Never rescan a token segment.",
+        "Null tokens consume a child slot but create no node frame. Frames track whether the next token fills left or right. Consume tokens once in order rather than repeatedly locating subtree slices.",
+        "“Consume tokens once with a cursor and explicit frames for nodes awaiting left or right children. A # fills the next pending child slot with null; an integer creates its node and makes its left slot the next obligation.”: The encoding order determines the next unfilled slot. Completing a node resumes its parent’s next slot, so markers preserve exact boundaries.",
+        "“For each non-null subtree, scan its token segment to locate the end of its left subtree by tracking pending slots, then construct the children by repeating those segment scans recursively with explicit frames.”: Slot counting locates valid boundaries, so construction is exact. On long branches, repeated scans overlap; one shared advancing cursor avoids this cost.",
+        "“Discard # tokens and insert the remaining integers into a binary search tree in their encountered order, sending equal values right.”: Labels do not order the layout. [5,8,#,#,2,#,#] encodes left child 8 and right child 2, but search-tree insertion reverses those positions.",
+        "“Read the tokens left to right but assign child slots in breadth-first order, starting with root, then all slots at each depth.”: The stream completes a left subtree before the right one. [1,2,3,#,#,#,4,#,#] means 1(2(3(-,-),-),4(-,-)), not the level-order layout."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b10-09-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "tree_structure_and_recursive_contract",
+    "difficulty": "medium",
+    "prompt": "For the revealed cursor decoder let n >= 1 be the number of constructed nodes and h the output tree height in nodes. What is the tight worst-case pair? Include the cursor and pending construction frames. Exclude the supplied token array and all nodes of the final returned tree. Node creation and token reads take constant time; there are 2n+1 tokens.",
+    "constraints": [
+      "All legal shapes are allowed; do not assume balance. Heights count nodes, not edges.",
+      "Pointer access, comparisons, arithmetic on the stated integer ranges, and allocation/release of a fixed-size frame take constant time. No hashing is used. Count all live explicit frames; the method does not use language recursion or copy paths/subtrees unless explicitly stated."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-height",
+          "text": "O(n) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-height",
+          "text": "O(n²) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "linear-n",
+          "text": "O(n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-height"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Every encoding token is consumed once with height-bounded unfinished parent frames.",
+      "details": [
+        "Each token is consumed once and each node frame completes once. Pending parent frames follow one ancestor chain, at most h long; a left chain attains h.",
+        "Before each token is read the top frame identifies the next child slot in node-left-right order. A marker finishes that slot; a node token opens exactly two ordered obligations. Valid input guarantees that finishing the root consumes the stream exactly.",
+        "“O(n) time, O(h) auxiliary space”: Each token is consumed once and each node frame completes once. Pending parent frames follow one ancestor chain, at most h long; a left chain attains h.",
+        "“O(n²) time, O(h) auxiliary space”: Completed subtrees are not scanned again; nesting the control flow does not itself multiply the node visits.",
+        "“O(n) time, O(1) auxiliary space”: The live explicit stack is auxiliary memory and can grow with tree height.",
+        "“O(n) time, O(n) auxiliary space”: This is a looser upper bound since h <= n; the height-sensitive bound is tighter and no full node table is retained."
+      ]
+    }
+  },
+  "analyzedApproachId": "decode-slots",
+  "methodReveal": {
+    "title": "Consume the next pending slot",
+    "description": "Read the root token first. For an integer create the root and push its frame, initially awaiting a left child. Read each next token into the top frame’s next slot; advance that frame to right or completed. Push a new frame for an integer child. Pop completed frames before the next token. A root # returns null. Never rescan a token segment."
+  }
+}

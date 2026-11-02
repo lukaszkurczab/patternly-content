@@ -1,7 +1,7 @@
 {
   "schemaVersion": "approach-challenge-problem-v1",
   "problemId": "acm-b10-02",
-  "problemVersion": "1",
+  "problemVersion": "2",
   "trackId": "coding-interview-dsa-problem-solving",
   "primaryFamilyId": "tree_traversal",
   "requiredFamilyIds": [
@@ -60,7 +60,14 @@
     "feedback": {
       "type": "approach_choice",
       "reason": "You can combine a subtree’s height and deepest-leaf count from the bottom up, or count the last level from the top down. Both methods are correct; the analyzed method is fixed as postorder.",
-      "details": {}
+      "details": [
+        "Use explicit postorder frames. Start at the root and finish both children before combining the parent frame. A missing child returns height -1 and count 0; a leaf returns height 0 and count 1. For an internal node, keep the count from the child with greater height, or add the counts when the heights tie. Increase the chosen height by one, pass the pair to the parent, and return the root count after its frame is combined.",
+        "A leaf returns one deepest leaf at its own height. Unequal child heights keep only the deeper count; equal heights add counts. Missing children contribute no leaves, preventing a lone child from being confused with a shallower leaf.",
+        "“Use an explicit stack of postorder frames. Each frame moves through entry, child processing, and combine steps; when it finishes, it returns the subtree height and the number of leaves at that height. Choose the taller child, or add the counts when the child heights tie.”: The explicit stack simulates postorder without relying on the language’s call-stack limit. A parent frame combines child results after they finish, including when only one child exists.",
+        "“Traverse the tree level by level with a queue. Replace the saved node count at each level, then return the count from the last level.”: Every node on the last level of a finite tree is a leaf. Breadth-first search can count that level directly. This approach uses a queue; the analyzed method uses an explicit stack.",
+        "“Use depth-first search and save a (node, depth) pair for every visited node. After the traversal, find the greatest depth and count the saved leaves at that depth.”: This returns the right result for every tree, but it stores every node and depth even though the answer can be combined from subtree results. Remove the list and combine the subtree height and count during postorder.",
+        "“Find the level with the most nodes, then return the number of leaves on that level.”: The widest level need not be the deepest. Counterexample: 1(2(4(8(-,-),-),5(-,-)),3(6(-,-),7(-,-))). Depth 2 is the widest level and has three leaves; depth 3 has only leaf 8. The correct answer is 1, but this method returns 3."
+      ]
     }
   },
   "complexityQuestion": {
@@ -103,29 +110,16 @@
     },
     "feedback": {
       "type": "choice_single",
-      "reason": "Each node is visited once, and combining the two child results takes constant work. The explicit stack holds frames for one active path from the root, so its maximum size depends on h.",
-      "details": {
-        "correctness": "An empty child returns height -1 and count 0; a leaf returns height 0 and count 1. When both children finish, the parent frame keeps the count from the taller subtree, or adds the counts when their heights tie. The root result therefore counts exactly the leaves at the greatest depth.",
-        "otherCorrectMethod": "Breadth-first search can return the count on the last level, since every node on that level is a leaf. Its queue uses space based on the width w; the analyzed postorder method uses a stack based on the height h. No relationship between h and w is assumed.",
-        "optionExplanations": [
-          {
-            "optionId": "n-h",
-            "why": "Each of n nodes is visited once, and at most h stack frames are active."
-          },
-          {
-            "optionId": "n-w",
-            "why": "Width w describes the breadth-first queue, while the analyzed method uses an explicit postorder stack."
-          },
-          {
-            "optionId": "n-constant",
-            "why": "A chain can require h active frames, so the stack is not constant-sized."
-          },
-          {
-            "optionId": "n-square-h",
-            "why": "Each subtree is combined once; the method does not traverse the same subtree repeatedly."
-          }
-        ]
-      }
+      "reason": "Constant-size postorder summaries require one combine per node and one live path.",
+      "details": [
+        "Each node is visited once, and combining the two child results takes constant work. The explicit stack holds frames for one active path from the root, so its maximum size depends on h.",
+        "An empty child returns height -1 and count 0; a leaf returns height 0 and count 1. When both children finish, the parent frame keeps the count from the taller subtree, or adds the counts when their heights tie. The root result therefore counts exactly the leaves at the greatest depth.",
+        "Breadth-first search can return the count on the last level, since every node on that level is a leaf. Its queue uses space based on the width w; the analyzed postorder method uses a stack based on the height h. No relationship between h and w is assumed.",
+        "“O(n) time, O(h) additional space”: Each of n nodes is visited once, and at most h stack frames are active.",
+        "“O(n) time, O(w) additional space, where w is the maximum width”: Width w describes the breadth-first queue, while the analyzed method uses an explicit postorder stack.",
+        "“O(n) time, O(1) additional space”: A chain can require h active frames, so the stack is not constant-sized.",
+        "“O(n²) time, O(h) additional space”: Each subtree is combined once; the method does not traverse the same subtree repeatedly."
+      ]
     }
   },
   "analyzedApproachId": "postorder-height-and-count",

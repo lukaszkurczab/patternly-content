@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-22",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints",
+    "binary_search"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "range-indices-versus-recursive-slice-copying",
+    "difficulty": "medium",
+    "questionId": "acm-b01-22-q1",
+    "prompt": "Archive lookup. A read-only array keys contains n strictly increasing signed integer keys. Given target, return its zero-based index, or -1 when absent. There are 1 <= n <= 200,000 keys. You may access an indexed key and compare it with target in constant time. Keys are opaque to the search: only order/equality comparisons are allowed, with no numeric interpolation or hashing. Creating a slice of length s allocates and copies s keys with proportional work. Choose minimum worst-case comparison-model total time, then peak auxiliary storage; return one index.\n\nExample 1: Input: keys=[-8,3,11,20], target=11. Output: 2.\nExample 2: Input: keys=[1,6,9], target=4. Output: -1.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "binary-search-by-bounds",
+          "text": "Keep low and high indices in the original array. Compare the midpoint, return its index on equality, and otherwise exclude that midpoint and the impossible half.",
+          "grade": "correct",
+          "feedback": "Sorted distinct keys justify discarding a half while the original array remains directly accessible. Only the current interval bounds are needed."
+        },
+        {
+          "optionId": "B",
+          "approachId": "binary-search-copied-halves",
+          "text": "At each step copy only the half that could contain target into a new array and continue there, tracking its original offset; release the previous copied half.",
+          "grade": "partial",
+          "feedback": "The offset preserves the correct original index and the sorted search is valid. However, copying the surviving keys at every step adds avoidable data movement that numeric bounds eliminate."
+        },
+        {
+          "optionId": "C",
+          "approachId": "binary-search-unsorted-copy",
+          "text": "Reverse a copy of keys, then apply the same increasing-order midpoint rules to that copy, mapping found positions back to original indices.",
+          "grade": "incorrect",
+          "feedback": "Reversal makes the order decreasing. For keys=[1,3,5], target=1, the midpoint 3 in [5,3,1] incorrectly discards the right half containing 1."
+        },
+        {
+          "optionId": "D",
+          "approachId": "check-nearest-endpoints",
+          "text": "Compare target only with the first and last keys, returning their index on equality and -1 otherwise.",
+          "grade": "incorrect",
+          "feedback": "Interior keys remain possible. For keys=[1,3,5], target=3, the correct index is 1, not -1."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Reducing the number of comparisons does not remove the cost of copying the remaining search interval.",
+      "details": [
+        "Let low=0 and high=n-1. While low<=high, read the midpoint key. Return midpoint on equality; if smaller than target set low=midpoint+1, otherwise set high=midpoint-1. Return -1 when the interval becomes empty. Never slice or recurse.",
+        "After comparing the midpoint, strict ordering rules out one whole side and the midpoint itself. Updating to midpoint+1 or midpoint-1 makes progress even when one candidate remains. Reusing integer bounds avoids the copying cost of constructing a smaller array after each comparison.",
+        "“Keep low and high indices in the original array. Compare the midpoint, return its index on equality, and otherwise exclude that midpoint and the impossible half.”: Sorted distinct keys justify discarding a half while the original array remains directly accessible. Only the current interval bounds are needed.",
+        "“At each step copy only the half that could contain target into a new array and continue there, tracking its original offset; release the previous copied half.”: The offset preserves the correct original index and the sorted search is valid. However, copying the surviving keys at every step adds avoidable data movement that numeric bounds eliminate.",
+        "“Reverse a copy of keys, then apply the same increasing-order midpoint rules to that copy, mapping found positions back to original indices.”: Reversal makes the order decreasing. For keys=[1,3,5], target=1, the midpoint 3 in [5,3,1] incorrectly discards the right half containing 1.",
+        "“Compare target only with the first and last keys, returning their index on equality and -1 otherwise.”: Interior keys remain possible. For keys=[1,3,5], target=3, the correct index is 1, not -1."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "range-indices-versus-recursive-slice-copying",
+    "difficulty": "medium",
+    "questionId": "acm-b01-22-q2",
+    "prompt": "For binary-search-by-bounds, what are worst-case total time and peak auxiliary space in terms of n? Include index arithmetic and comparisons. The input is already sorted and its construction is excluded. No slices, hashing, recursive frames, or output arrays are used.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "bounds",
+          "text": "O(log(n + 1)) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "copies",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "recursive",
+          "text": "O(log(n + 1)) time, O(log(n + 1)) auxiliary space"
+        },
+        {
+          "optionId": "scan",
+          "text": "O(n) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "bounds"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Halve one indexed search interval using only scalar bounds.",
+      "details": [
+        "Each comparison eliminates the midpoint and roughly half the remaining interval, giving O(log(n+1)) iterations with constant work each. Only low, high and midpoint are retained. The partial alternative copies half-sized arrays whose lengths sum to O(n), but that copying is absent from this analyzed method.",
+        "Time: O(log(n + 1)).",
+        "Auxiliary space: O(1).",
+        "“O(n) time, O(n) auxiliary space”: This describes creating copied halves, not retaining index bounds into the original input.",
+        "“O(log(n + 1)) time, O(log(n + 1)) auxiliary space”: An iterative interval has no accumulated call frames; it retains only constant state.",
+        "“O(n) time, O(1) auxiliary space”: This is a loose upper bound; halving produces logarithmically many reads in the worst case."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "copies",
+          "text": "This describes creating copied halves, not retaining index bounds into the original input."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "recursive",
+          "text": "An iterative interval has no accumulated call frames; it retains only constant state."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "scan",
+          "text": "This is a loose upper bound; halving produces logarithmically many reads in the worst case."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "binary-search-by-bounds",
+  "methodReveal": {
+    "title": "Narrow an index interval",
+    "description": "Let low=0 and high=n-1. While low<=high, read the midpoint key. Return midpoint on equality; if smaller than target set low=midpoint+1, otherwise set high=midpoint-1. Return -1 when the interval becomes empty. Never slice or recurse."
+  }
+}

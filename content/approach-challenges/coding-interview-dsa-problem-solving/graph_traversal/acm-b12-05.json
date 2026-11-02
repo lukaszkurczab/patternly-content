@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-05",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-05-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "visited_state_and_cycles",
+    "difficulty": "medium",
+    "prompt": "Circular handoffs. Each directed edge u -> v means a document can be handed from team u to team v. Return true exactly when some document could follow one or more handoffs and return to the team where it started. A cycle anywhere in the graph counts, even in a disconnected region.\n\nInput: read-only outgoing adjacency lists for teams 0 through V-1, 1 <= V <= 200000 and 0 <= E <= 400000. Edges may include self-loops, but no duplicate ordered pairs. Output: one boolean.\n\nExample 1: lists=[[1],[2],[1],[]], output=true, using 1 -> 2 -> 1.\nExample 2: lists=[[1,2],[3],[3],[]], output=false; two routes may merge without a circular handoff.\nExample 3: lists=[[],[1]], output=true.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "three-state-dfs",
+          "text": "Run a DFS forest with unseen, active, and finished states. Keep explicit frames with each active vertex and its next neighbor index. An edge to an active vertex reports a cycle; mark a vertex finished only after its outgoing list is exhausted.",
+          "grade": "correct",
+          "feedback": "Active frames form the current directed route. An edge back into that route closes a cycle; an edge to a finished vertex alone does not. Scanning all roots catches disconnected cycles."
+        },
+        {
+          "optionId": "B",
+          "approachId": "indegree-elimination",
+          "text": "Compute indegrees, repeatedly remove zero-indegree vertices and decrement outgoing neighbors, and report a cycle exactly when fewer than V vertices can be removed.",
+          "grade": "correct",
+          "feedback": "A directed cycle cannot lose its last incoming cycle edge through zero-indegree removal. Conversely, any nonempty remaining finite graph with positive indegree everywhere contains a cycle. The queue and indegree array have the same resource bounds as the DFS forest."
+        },
+        {
+          "optionId": "C",
+          "approachId": "any-visited-edge",
+          "text": "Traverse the graph and report a cycle whenever an edge points to any previously visited vertex, without distinguishing active and finished vertices.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1,2],[3],[3],[]], a traversal can finish 3 through 1 and later encounter 2 -> 3. The graph is acyclic: meeting an already completed route does not close the current route."
+        },
+        {
+          "optionId": "D",
+          "approachId": "fresh-dfs-per-root",
+          "text": "For every vertex, run a full three-state DFS reachable from it with freshly reset states. Report true if any run finds an active-ancestor edge; otherwise return false.",
+          "grade": "partial",
+          "feedback": "Each run is a valid directed-cycle check, so the final answer is correct for all inputs. Resetting states for every root repeats completed work; retaining finished states across the forest avoids those repeated traversals."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Directed-cycle detection needs route membership rather than a single visited bit. Both a DFS forest with active states and zero-indegree elimination solve the whole graph optimally.",
+      "details": [
+        "Initialize every state as unseen. For each unseen vertex, mark it active and push a frame containing the vertex and next-neighbor index zero. Inspect the next outgoing edge of the top frame and advance that frame index. An active neighbor proves a cycle. For an unseen neighbor, mark it active and push its frame. Skip finished neighbors. When a frame has no remaining edges, mark its vertex finished and pop it. If all roots finish without an active-neighbor edge, return false.",
+        "An edge to an active ancestor closes a directed cycle; an edge to a finished vertex does not. Frames need neighbor-progress state to distinguish these statuses and finish a vertex only after its descendants.",
+        "“Run a DFS forest with unseen, active, and finished states. Keep explicit frames with each active vertex and its next neighbor index. An edge to an active vertex reports a cycle; mark a vertex finished only after its outgoing list is exhausted.”: Active frames form the current directed route. An edge back into that route closes a cycle; an edge to a finished vertex alone does not. Scanning all roots catches disconnected cycles.",
+        "“Compute indegrees, repeatedly remove zero-indegree vertices and decrement outgoing neighbors, and report a cycle exactly when fewer than V vertices can be removed.”: A directed cycle cannot lose its last incoming cycle edge through zero-indegree removal. Conversely, any nonempty remaining finite graph with positive indegree everywhere contains a cycle. The queue and indegree array have the same resource bounds as the DFS forest.",
+        "“Traverse the graph and report a cycle whenever an edge points to any previously visited vertex, without distinguishing active and finished vertices.”: For lists=[[1,2],[3],[3],[]], a traversal can finish 3 through 1 and later encounter 2 -> 3. The graph is acyclic: meeting an already completed route does not close the current route.",
+        "“For every vertex, run a full three-state DFS reachable from it with freshly reset states. Report true if any run finds an active-ancestor edge; otherwise return false.”: Each run is a valid directed-cycle check, so the final answer is correct for all inputs. Resetting states for every root repeats completed work; retaining finished states across the forest avoids those repeated traversals."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-05-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "visited_state_and_cycles",
+    "difficulty": "medium",
+    "prompt": "Analyze three-state-dfs, not indegree-elimination. V counts vertices and E directed edges. Initialize a V-entry state array and scan every root. Store each frame as a fixed-size pair of vertex ID and next-neighbor index in a preallocated stack of capacity V. Access adjacency lists directly without slicing or copying. State/index operations are constant time; no hashing, amortized growth, or recursion is used. Exclude input lists and the boolean output, but include states and frames. Consider a graph that does not return early.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(E) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Three-state DFS processes every directed edge once using saved neighbor indices.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: each vertex changes from unseen to active to finished once, each frame index advances across its own outgoing list once, and initializing/scanning roots costs V. The state array and reserved frame stack each use O(V) space. B misses space needed for isolated vertices when E is zero. The option “O(V(V + E)) time, O(V) auxiliary space” describes fresh searches with reset states rather than one retained DFS forest. The option “O(V + E) time, O(1) auxiliary space” omits both the state array and explicit stack; replacing recursion with frames does not remove traversal storage.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "three-state-dfs",
+  "methodReveal": {
+    "title": "DFS with resumable frames",
+    "description": "Initialize every state as unseen. For each unseen vertex, mark it active and push a frame containing the vertex and next-neighbor index zero. Inspect the next outgoing edge of the top frame and advance that frame index. An active neighbor proves a cycle. For an unseen neighbor, mark it active and push its frame. Skip finished neighbors. When a frame has no remaining edges, mark its vertex finished and pop it. If all roots finish without an active-neighbor edge, return false."
+  }
+}

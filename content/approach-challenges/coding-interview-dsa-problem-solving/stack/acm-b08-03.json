@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b08-03",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "stack",
+  "requiredFamilyIds": [
+    "stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "postfix-operand-order",
+    "difficulty": "medium",
+    "questionId": "acm-b08-03-q1",
+    "prompt": "A calculator receives an immutable list of n tokens, 1 <= n <= 200,000. Each token is a signed integer, ADD, or SUB. An integer contributes its value. An operator consumes the two most recent unresolved values: if the older is a and the newer is b, ADD produces a+b and SUB produces a-b. That result becomes one unresolved value. Return the final value. The list is guaranteed well formed: every operator has two values available and exactly one value remains at the end. All literals and intermediate results fit signed 64-bit integers. Choose a method minimizing worst-case total processing time. Input: [12, 5, 2, SUB, SUB]. Output: 9, since 5-2=3 and 12-3=9.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "reduce-operands",
+          "text": "Scan left to right with a value stack. Push integers; for an operator pop b, then a, and push a+b or a-b. Return the last value.",
+          "grade": "correct",
+          "feedback": "Two completed subexpressions nearest the operator are its operands; preserving their order matters for subtraction."
+        },
+        {
+          "optionId": "B",
+          "approachId": "reverse-subtraction",
+          "text": "Use a value stack, but for SUB pop b then a and push b-a.",
+          "grade": "incorrect",
+          "feedback": "For [12,5,SUB], this returns -7 instead of 7. The newest value is the right operand."
+        },
+        {
+          "optionId": "C",
+          "approachId": "fifo-operands",
+          "text": "Keep values in a FIFO queue; each operator consumes the oldest two values.",
+          "grade": "incorrect",
+          "feedback": "For [12,5,2,SUB,SUB], this consumes 12 and 5 first and eventually returns -5 rather than 9."
+        },
+        {
+          "optionId": "D",
+          "approachId": "reduce-list-repeatedly",
+          "text": "Copy tokens to a mutable list. Repeatedly find the leftmost operator, replace its preceding two values and itself by its result, and shift the remaining suffix.",
+          "grade": "partial",
+          "feedback": "This correctly reduces complete subexpressions, but repeated searches and suffix shifts repeat work that a retained value stack avoids."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "An operator combines the latest completed values, while subtraction fixes which is left and right.",
+      "details": [
+        "Keep unresolved values on a stack. An operator removes its right operand first and its left operand second, then pushes the computed value. Return the sole remaining value.",
+        "An operator pops the right operand before the left operand. This matters for subtraction and division even though addition hides the mistake. Literals remain pending until a later operator consumes them.",
+        "“Scan left to right with a value stack. Push integers; for an operator pop b, then a, and push a+b or a-b. Return the last value.”: Two completed subexpressions nearest the operator are its operands; preserving their order matters for subtraction.",
+        "“Use a value stack, but for SUB pop b then a and push b-a.”: For [12,5,SUB], this returns -7 instead of 7. The newest value is the right operand.",
+        "“Keep values in a FIFO queue; each operator consumes the oldest two values.”: For [12,5,2,SUB,SUB], this consumes 12 and 5 first and eventually returns -5 rather than 9.",
+        "“Copy tokens to a mutable list. Repeatedly find the leftmost operator, replace its preceding two values and itself by its result, and shift the remaining suffix.”: This correctly reduces complete subexpressions, but repeated searches and suffix shifts repeat work that a retained value stack avoids."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "postfix-operand-order",
+    "difficulty": "medium",
+    "questionId": "acm-b08-03-q2",
+    "prompt": "For reduce-operands, choose the tightest worst-case total time and auxiliary-space bounds in terms of n, the input length.",
+    "constraints": [
+      "The input is immutable and excluded from auxiliary space. Returned output is excluded, but all working buffers count even if later copied into output.",
+      "Fixed-size integers, characters, indices and comparisons take constant time. Arithmetic is unit cost under the stated range guarantee.",
+      "Use an iterative implementation with a preallocated n-entry array and a top index: push and pop take constant time. No recursion, hashing, or hidden whole-buffer copies occur.",
+      "Materializing output takes time proportional to its length; no persistent snapshots or string concatenation are used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-linear",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "logarithmic-linear",
+          "text": "O(log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-linear"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each token causes at most two pops and one push.",
+      "details": [
+        "Every token is processed once with at most two pops and one push. A legal input can begin with a linear number of literals, so the working stack needs O(n) space. The scalar output adds no working buffer.",
+        "Time: O(n).",
+        "Auxiliary space: O(n).",
+        "“O(n) time, O(1) auxiliary space”: A legal expression may first push a linear number of literals, so the pending-value stack is not constant-sized.",
+        "“O(n²) time, O(n) auxiliary space”: Each operator consumes two pending values and produces one; the algorithm never reevaluates an earlier token prefix.",
+        "“O(log n) time, O(n) auxiliary space”: The final literal or operator can affect the result, so a complete legal expression may require all n token reads."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "linear-constant",
+          "text": "A legal expression may first push a linear number of literals, so the pending-value stack is not constant-sized."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "quadratic-linear",
+          "text": "Each operator consumes two pending values and produces one; the algorithm never reevaluates an earlier token prefix."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "logarithmic-linear",
+          "text": "The final literal or operator can affect the result, so a complete legal expression may require all n token reads."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "reduce-operands",
+  "methodReveal": {
+    "title": "Reduce completed subexpressions",
+    "description": "Keep unresolved values on a stack. An operator removes its right operand first and its left operand second, then pushes the computed value. Return the sole remaining value."
+  }
+}

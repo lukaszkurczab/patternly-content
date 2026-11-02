@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b10-17",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "tree_traversal",
+  "requiredFamilyIds": [
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b10-17-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "subtree_return_values",
+    "difficulty": "medium",
+    "prompt": "Keep the Marked Rooms. Each node of a binary tree stores a unique ID and a Boolean marked flag. Return a new tree containing exactly the nodes that lie on some path from the original root to a marked node. Preserve original left/right positions and IDs of retained nodes. If no node is marked, return null. Do not mutate the input.\n\nExample 1: Input: root A unmarked; A.left=B unmarked; B.left=D marked; A.right=C unmarked; all other children missing. Output: A with left child B with left child D; all other pointers missing. Example 2: Input: one unmarked node A. Output: null. Example 3: Input: one marked node A. Output: a new marked node A.\n\nConstraints: 0 <= n <= 200000; IDs are unique signed 32-bit integers. The input has child pointers only, no cycles or shared nodes, and arbitrary shape. Returned nodes are newly allocated and retain the original marked flags. Allocate a new node only after deciding it will be part of the final output.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "retain-postorder",
+          "approachId": "retain-postorder",
+          "text": "Use postorder frames returning the retained child roots. If the current node is marked or either retained child exists, create its output copy with those children; otherwise return null.",
+          "grade": "correct",
+          "feedback": "A subtree contributes exactly when it contains a mark. A retained child therefore keeps all ancestors needed to connect it to the original root."
+        },
+        {
+          "optionId": "retain-rescan",
+          "approachId": "retain-rescan",
+          "text": "For each original node separately search its entire subtree for any mark. Build an output copy precisely when that search succeeds, preserving each retained child position.",
+          "grade": "partial",
+          "feedback": "This applies the correct retention test at every node, but repeated mark searches overlap. Child results already tell whether a mark exists below."
+        },
+        {
+          "optionId": "retain-marked-only",
+          "approachId": "retain-marked-only",
+          "text": "Delete every unmarked node and return only marked nodes in their original child slots, discarding children when their parent is deleted.",
+          "grade": "incorrect",
+          "feedback": "Example 1 would delete A and B, losing marked D even though both ancestors are required in the output."
+        },
+        {
+          "optionId": "retain-marked-parents",
+          "approachId": "retain-marked-parents",
+          "text": "Retain a node only if it is marked or has an immediately marked child.",
+          "grade": "incorrect",
+          "feedback": "In Example 1 A has no immediately marked child, but must remain because D is a marked descendant."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A node is retained when its subtree contains a mark; unmarked ancestors may still be necessary connectors.",
+      "details": [
+        "Use fixed-size postorder frames. A missing child returns null. After both children return their retained roots, create a copy of the current node only when its flag is marked or a returned child is non-null. Connect those returned children in the same slots. Otherwise return null. Pass the new root upward and release completed frames.",
+        "Keep an unmarked node when either retained child exists: it connects marked descendants to the root. Allocate a copy only after child decisions are known. Returned retained subtrees are output, while active postorder frames remain auxiliary.",
+        "“Use postorder frames returning the retained child roots. If the current node is marked or either retained child exists, create its output copy with those children; otherwise return null.”: A subtree contributes exactly when it contains a mark. A retained child therefore keeps all ancestors needed to connect it to the original root.",
+        "“For each original node separately search its entire subtree for any mark. Build an output copy precisely when that search succeeds, preserving each retained child position.”: This applies the correct retention test at every node, but repeated mark searches overlap. Child results already tell whether a mark exists below.",
+        "“Delete every unmarked node and return only marked nodes in their original child slots, discarding children when their parent is deleted.”: Example 1 would delete A and B, losing marked D even though both ancestors are required in the output.",
+        "“Retain a node only if it is marked or has an immediately marked child.”: In Example 1 A has no immediately marked child, but must remain because D is a marked descendant."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b10-17-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "subtree_return_values",
+    "difficulty": "medium",
+    "prompt": "For the revealed retention method consider n>=1 input nodes and input height h in nodes. Choose the tight worst-case pair. Count active frames and their two returned child pointers. Exclude the immutable input and every newly allocated node in the final output, including a completed output subtree awaiting attachment to its parent. Node allocation is constant-time and no output nodes are later discarded.",
+    "constraints": [
+      "All legal shapes are allowed; do not assume balance. Heights count nodes, not edges.",
+      "Pointer access, comparisons, arithmetic on the stated integer ranges, and allocation/release of a fixed-size frame take constant time. No hashing is used. Count all live explicit frames; the method does not use language recursion or copy paths/subtrees unless explicitly stated."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-height",
+          "text": "O(n) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-height",
+          "text": "O(n²) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "linear-n",
+          "text": "O(n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-height"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Inspect every input node once; active frames, rather than returned copies, determine helper space.",
+      "details": [
+        "Each input node is inspected and combined once, with at most one constant-time output allocation. Only an active ancestor chain of O(h) fixed-size frames is auxiliary; completed retained subtrees belong to the output.",
+        "Inductively the returned child root is null exactly when that child subtree has no marked node. A current mark or non-null retained child is therefore equivalent to membership on a root-to-mark path. Creating no other nodes gives exactly the required output.",
+        "“O(n) time, O(h) auxiliary space”: Each input node is inspected and combined once, with at most one constant-time output allocation. Only an active ancestor chain of O(h) fixed-size frames is auxiliary; completed retained subtrees belong to the output.",
+        "“O(n²) time, O(h) auxiliary space”: Completed subtrees are not scanned again; nesting the control flow does not itself multiply the node visits.",
+        "“O(n) time, O(1) auxiliary space”: The live explicit stack is auxiliary memory and can grow with tree height.",
+        "“O(n) time, O(n) auxiliary space”: This is a looser upper bound since h <= n; the height-sensitive bound is tighter and no full node table is retained."
+      ]
+    }
+  },
+  "analyzedApproachId": "retain-postorder",
+  "methodReveal": {
+    "title": "Decide after the children",
+    "description": "Use fixed-size postorder frames. A missing child returns null. After both children return their retained roots, create a copy of the current node only when its flag is marked or a returned child is non-null. Connect those returned children in the same slots. Otherwise return null. Pass the new root upward and release completed frames."
+  }
+}

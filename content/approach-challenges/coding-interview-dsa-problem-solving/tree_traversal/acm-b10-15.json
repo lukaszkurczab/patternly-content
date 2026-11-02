@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b10-15",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "tree_traversal",
+  "requiredFamilyIds": [
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b10-15-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "dfs_preorder",
+    "difficulty": "medium",
+    "prompt": "Container Membership. A non-empty rooted binary tree has IDs 0 through n-1. A supplied nodes array maps each ID directly to its node. Given q pairs (u,v), return for each whether u is an ancestor of v, allowing u=v. Answer many queries on the same immutable hierarchy.\n\nIn examples, x(left,right) denotes a node labelled x, and - denotes an absent child. Example 1: Input: 0(1(3(-,-),-),2(-,-)), queries=[(1,3),(3,1),(2,2),(1,2)]. Output: [true,false,true,false]. Example 2: Input: 0(-,-), queries=[(0,0)]. Output: [true].\n\nConstraints: 1 <= n <= 200000; 1 <= q <= 200000; every query ID is valid. The tree has child pointers only, no parent pointers, cycles or shared nodes; shape is unrestricted. The nodes array, query array and output Boolean array are supplied. Preprocessing for this query batch is allowed; do not change the tree.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "ancestor-intervals",
+          "approachId": "ancestor-intervals",
+          "text": "Make one depth-first traversal with entry and exit events. Store an entry number and completed-subtree boundary for each ID. Answer a query by testing whether v’s entry lies inside u’s interval.",
+          "grade": "correct",
+          "feedback": "A depth-first traversal finishes every descendant before leaving its subtree. Those entries form one contiguous interval, including the node itself."
+        },
+        {
+          "optionId": "ancestor-repeated",
+          "approachId": "ancestor-repeated",
+          "text": "For each query separately traverse the subtree rooted at nodes[u] and look for v, including u itself.",
+          "grade": "partial",
+          "feedback": "This answers every query correctly and uses the hierarchy, but repeats work across the batch. Precomputed subtree intervals reuse one traversal for all queries."
+        },
+        {
+          "optionId": "ancestor-entry-only",
+          "approachId": "ancestor-entry-only",
+          "text": "Record only entry numbers. Return true whenever entry[u] <= entry[v].",
+          "grade": "incorrect",
+          "feedback": "In Example 1 a left-first traversal enters 1 before 2, but 1 is not an ancestor of 2. A subtree end boundary is also needed."
+        },
+        {
+          "optionId": "ancestor-id-order",
+          "approachId": "ancestor-id-order",
+          "text": "Return true whenever u<=v, because IDs encode the hierarchy order.",
+          "grade": "incorrect",
+          "feedback": "No such ID ordering is promised. In Example 1, 1<=2 but 1 does not contain 2."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Entry and completion intervals answer repeated ancestor queries without rescanning paths.",
+      "details": [
+        "Use explicit depth-first frames with enter and exit phases. At entry set tin[id] to a counter and increment it. At exit set end[id] to the current counter. Store these in arrays indexed by ID. For each query return tin[u] <= tin[v] and tin[v] < end[u]. Use no hashing or copied paths.",
+        "Depth-first entry indices put every subtree in one contiguous half-open interval. u contains v exactly when tin[v] lies in u's interval, including u itself. Exit boundaries exclude nodes visited after the subtree finishes.",
+        "“Make one depth-first traversal with entry and exit events. Store an entry number and completed-subtree boundary for each ID. Answer a query by testing whether v’s entry lies inside u’s interval.”: A depth-first traversal finishes every descendant before leaving its subtree. Those entries form one contiguous interval, including the node itself.",
+        "“For each query separately traverse the subtree rooted at nodes[u] and look for v, including u itself.”: This answers every query correctly and uses the hierarchy, but repeats work across the batch. Precomputed subtree intervals reuse one traversal for all queries.",
+        "“Record only entry numbers. Return true whenever entry[u] <= entry[v].”: In Example 1 a left-first traversal enters 1 before 2, but 1 is not an ancestor of 2. A subtree end boundary is also needed.",
+        "“Return true whenever u<=v, because IDs encode the hierarchy order.”: No such ID ordering is promised. In Example 1, 1<=2 but 1 does not contain 2."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b10-15-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "dfs_preorder",
+    "difficulty": "medium",
+    "prompt": "For the revealed interval method let n be the node count, h the height and q the query count. Include the entire preprocessing and all query answers. What is the tight worst-case pair? Count the two length-n arrays and traversal frames; exclude the supplied tree, nodes array, query array and final Boolean output array. Output slots are preallocated.",
+    "constraints": [
+      "All legal shapes are allowed; do not assume balance. Heights count nodes, not edges.",
+      "Pointer access, comparisons, arithmetic on the stated integer ranges, and allocation/release of a fixed-size frame take constant time. No hashing is used. Count all live explicit frames; the method does not use language recursion or copy paths/subtrees unless explicitly stated."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "nq-n",
+          "text": "O(nq) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "nq-h",
+          "text": "O(n+q) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "nqplus-n",
+          "text": "O(n+q) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "nlogq-n",
+          "text": "O(n log n + q) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "nqplus-n"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Prepare two n-entry time arrays once and answer q interval tests.",
+      "details": [
+        "There are O(n) traversal events and O(q) constant-time comparisons. Two length-n arrays plus O(h) frames use O(n) space because h<=n.",
+        "Entries between tin[u] inclusive and end[u] exclusive are exactly the nodes visited before u’s depth-first exit, hence exactly its subtree. This includes u and no later sibling subtree.",
+        "“O(nq) time, O(n) auxiliary space”: That time corresponds to repeated subtree searches. Preprocessing visits each node once and each interval query is constant-time.",
+        "“O(n+q) time, O(h) auxiliary space”: The explicit frames are not the only storage: both timestamp arrays remain live for the queries.",
+        "“O(n+q) time, O(n) auxiliary space”: There are O(n) traversal events and O(q) constant-time comparisons. Two length-n arrays plus O(h) frames use O(n) space because h<=n.",
+        "“O(n log n + q) time, O(n) auxiliary space”: IDs index arrays directly; no sorting, binary searches, or ordered-map operations are performed."
+      ]
+    }
+  },
+  "analyzedApproachId": "ancestor-intervals",
+  "methodReveal": {
+    "title": "Number an entire subtree interval",
+    "description": "Use explicit depth-first frames with enter and exit phases. At entry set tin[id] to a counter and increment it. At exit set end[id] to the current counter. Store these in arrays indexed by ID. For each query return tin[u] <= tin[v] and tin[v] < end[u]. Use no hashing or copied paths."
+  }
+}

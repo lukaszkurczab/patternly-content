@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b06-22",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "prefix_sums",
+  "requiredFamilyIds": [
+    "prefix_sums",
+    "binary_search"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "prefix_sums",
+    "mentalUnitId": "answer_range_queries",
+    "difficulty": "hard",
+    "questionId": "acm-b06-22-q1",
+    "prompt": "Distance to a quote. A read-only nondecreasing array a contains n signed prices. For each of q integer quotes x return sum over all i of |a[i]-x|. Quotes need not be sorted.\n\nInput: a=[-2,1,5], quotes [1,3]. Output: [7,9].\n\nConstraints: 1 ≤ n,q ≤ 200000; -1000000 ≤ a[i],x ≤ 1000000. Duplicates are allowed. All products and totals fit signed 64 bits.\n\nWhich approach handles the complete task correctly and efficiently?",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "method-22",
+          "text": "Build leading-zero cumulative sums P. For each x, binary search the first index k with a[k] ≥ x, or n if absent. Return x*k-P[k] + (P[n]-P[k])-x*(n-k).",
+          "grade": "correct",
+          "feedback": "Sorted order splits absolute differences into x-a[i] on the left and a[i]-x on the right. Boundary k also handles duplicates and quotes outside the array."
+        },
+        {
+          "optionId": "B",
+          "approachId": "flaw-22",
+          "text": "Return the absolute value of P[n]-n*x.",
+          "grade": "incorrect",
+          "feedback": "Opposite signed deviations cancel before absolute value: for [0,2] and x=1, it returns 0 instead of 2."
+        },
+        {
+          "optionId": "C",
+          "approachId": "scan-22",
+          "text": "For each quote visit all prices and add their absolute differences.",
+          "grade": "incorrect",
+          "feedback": "This gives correct results, but repeatedly traverses overlapping candidates. The selected summary reuses their shared work."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Build leading-zero cumulative sums P. For each x, binary search the first index k with a[k] ≥ x, or n if absent. Return x*k-P[k] + (P[n]-P[k])-x*(n-k).",
+      "details": [
+        "Build leading-zero cumulative sums P. For each x, binary search the first index k with a[k] ≥ x, or n if absent. Return x*k-P[k] + (P[n]-P[k])-x*(n-k).",
+        "Sorted prices split at the first value at least x. Values before it contribute x-a[i]; later values contribute a[i]-x. Prefix sums combine those two linear expressions without scanning every price per quote.",
+        "“Build leading-zero cumulative sums P. For each x, binary search the first index k with a[k] ≥ x, or n if absent. Return x*k-P[k] + (P[n]-P[k])-x*(n-k).”: Sorted order splits absolute differences into x-a[i] on the left and a[i]-x on the right. Boundary k also handles duplicates and quotes outside the array.",
+        "“Return the absolute value of P[n]-n*x.”: Opposite signed deviations cancel before absolute value: for [0,2] and x=1, it returns 0 instead of 2.",
+        "“For each quote visit all prices and add their absolute differences.”: This gives correct results, but repeatedly traverses overlapping candidates. The selected summary reuses their shared work."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "prefix_sums",
+    "mentalUnitId": "answer_range_queries",
+    "difficulty": "hard",
+    "questionId": "acm-b06-22-q2",
+    "prompt": "Analyze only the method in the reveal. Choose its tightest worst-case time and worst-case auxiliary-space pair. Use constant-time 64-bit arithmetic. Exclude read-only input and required output; include every described table. All loops are iterative, with no recursive stack or input copies.",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "p0",
+          "text": "O(n + q log(n + 1)) time; O(n) auxiliary space"
+        },
+        {
+          "optionId": "p1",
+          "text": "O(nq) time; O(1) auxiliary space"
+        },
+        {
+          "optionId": "p2",
+          "text": "O(n + q) time; O(n) auxiliary space"
+        },
+        {
+          "optionId": "p3",
+          "text": "O(q log(n + 1)) time; O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "p0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Prepare sums once, then binary-search each quote's split point.",
+      "details": [
+        "Building n+1 totals costs O(n) time and space. Each independent iterative binary search takes O(log(n+1)) worst-case time and constant extra state.",
+        "Use constant-time 64-bit arithmetic. Exclude read-only input and required output; include every described table. All loops are iterative, with no recursive stack or input copies.",
+        "Build n+1 cumulative totals in O(n). Each of q quotes performs a binary search over n values, costing O(log(n+1)), followed by fixed arithmetic on prefix totals. Total time is O(n+q log(n+1)). O(nq) rescans all prices per quote; O(n+q) omits the independent searches, while O(q log(n+1)) omits preparation.",
+        "The prefix table retains n+1 entries, giving O(n) auxiliary space; iterative search reuses a fixed set of bounds and totals. The constant-space alternatives omit the actual table. Supplied sorted prices/quotes and the q returned distances are excluded, but the newly built prefix table is included."
+      ]
+    }
+  },
+  "analyzedApproachId": "method-22",
+  "methodReveal": {
+    "title": "Selected method",
+    "description": "Build leading-zero cumulative sums P. For each x, binary search the first index k with a[k] ≥ x, or n if absent. Return x*k-P[k] + (P[n]-P[k])-x*(n-k)."
+  }
+}

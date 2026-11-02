@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-15",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal",
+    "hash_map_and_set"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b12-15-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "medium",
+    "prompt": "Duplicate a connected object network. You receive a reference start to a node object. Each node has a label and an ordered list of references to neighbor nodes. Return the corresponding start reference in a deep clone of every node reachable from start. The clone must preserve labels, neighbor-list order, duplicate neighbor entries, cycles, self-references and shared neighbors. No cloned neighbor may refer to an original object. Labels need not be unique. start may be null, in which case return null.\n\nThe original objects are read-only. At most 100000 objects and 300000 neighbor references are reachable; labels fit in a machine word. Object identity comparisons take constant time. Example: A(label=7).neighbors=[B,B], B(label=7).neighbors=[A]. The result has two distinct new objects A′ and B′, A′.neighbors=[B′,B′], and B′.neighbors=[A′].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "identity-map-clone",
+          "text": "Maintain an original-object to clone-object map. Create and map each clone before exploring its neighbors, then append mapped neighbor clones in original order, creating and scheduling any unseen objects.",
+          "grade": "correct",
+          "feedback": "Mapping by identity preserves distinct equal-label nodes and shared references. Publishing a new clone in the map before following edges breaks recursion through cycles without losing connections."
+        },
+        {
+          "optionId": "B",
+          "approachId": "label-map-clone",
+          "text": "Use the same cloning traversal but map clones by node label rather than original object identity.",
+          "grade": "incorrect",
+          "feedback": "In the example, A and B both have label 7 but are distinct nodes. A label-keyed map merges them into one clone and changes the network."
+        },
+        {
+          "optionId": "C",
+          "approachId": "copy-node-lists",
+          "text": "Create a new node for each reached original, but copy the original neighbor reference lists directly into the new nodes.",
+          "grade": "incorrect",
+          "feedback": "The copied lists still point at original objects. For a self-referencing node A, the new A′ would point to A rather than A′, violating the deep-clone contract."
+        },
+        {
+          "optionId": "D",
+          "approachId": "recursive-after-neighbors",
+          "text": "Recursively clone each neighbor first and add the current original-to-clone mapping only after all neighbor calls return.",
+          "grade": "incorrect",
+          "feedback": "A single self-referencing node is legal. Its neighbor triggers cloning the same original again before any mapping exists, so this procedure does not terminate."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A clone map must preserve object identity and must contain each placeholder before edges can lead back to it.",
+      "details": [
+        "If start is null, return null. Otherwise create its empty clone, store start->clone in a hash map and push start. Pop an original object, iterate its neighbor references in order, and create/map/push each previously unseen neighbor before appending its clone reference to the current clone’s list. Use one exact-size neighbor array per clone, filling by index. Return the mapped start clone.",
+        "Map original object identity to its clone before scheduling neighbors. This handles cycles and repeated labels without duplicating a node. Preserve neighbor order while wiring clone references; copied graph nodes and edges are returned output.",
+        "“Maintain an original-object to clone-object map. Create and map each clone before exploring its neighbors, then append mapped neighbor clones in original order, creating and scheduling any unseen objects.”: Mapping by identity preserves distinct equal-label nodes and shared references. Publishing a new clone in the map before following edges breaks recursion through cycles without losing connections.",
+        "“Use the same cloning traversal but map clones by node label rather than original object identity.”: In the example, A and B both have label 7 but are distinct nodes. A label-keyed map merges them into one clone and changes the network.",
+        "“Create a new node for each reached original, but copy the original neighbor reference lists directly into the new nodes.”: The copied lists still point at original objects. For a self-referencing node A, the new A′ would point to A rather than A′, violating the deep-clone contract.",
+        "“Recursively clone each neighbor first and add the current original-to-clone mapping only after all neighbor calls return.”: A single self-referencing node is legal. Its neighbor triggers cloning the same original again before any mapping exists, so this procedure does not terminate."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-15-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "medium",
+    "prompt": "Analyze identity-map-clone. V is the number of reachable objects, E the number of reachable neighbor references including duplicates. For non-null start, use expected constant-time object-identity hash-map lookup/insertion. Node allocation and copying a machine-word label cost constant time; allocating/filling an exact-size neighbor array costs linear time in its length. Use a preallocated V-slot iterative stack, with constant-time indexed push/pop. Count all clone creation and copying time. Exclude original input and the entire returned clone graph (all V nodes and E references) from auxiliary space; include the map and stack. No recursive calls or neighbor-list slices are made. Give expected time under the stated hashing model and worst-case auxiliary space.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) expected time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) expected time, O(V + E) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V) expected time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) expected time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Copy each reachable node and reference once; the identity map and traversal stack remain auxiliary.",
+      "details": [
+        "The option “O(V + E) expected time, O(V) auxiliary space” is tight: each object is created and scheduled once, and each neighbor reference is copied once, with expected constant-time map work per event. The map and stack hold at most V entries. The option “O(V + E) expected time, O(V + E) auxiliary space” incorrectly counts clone neighbor arrays as auxiliary even though the whole returned graph is excluded. The option “O(V) expected time, O(V) auxiliary space” omits E reference copies. The option “O(V + E) expected time, O(1) auxiliary space” omits the identity map and stack. A null start instead takes constant time and space.",
+        "O(V + E) expected",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "identity-map-clone",
+  "methodReveal": {
+    "title": "Create placeholders before traversing references",
+    "description": "If start is null, return null. Otherwise create its empty clone, store start->clone in a hash map and push start. Pop an original object, iterate its neighbor references in order, and create/map/push each previously unseen neighbor before appending its clone reference to the current clone’s list. Use one exact-size neighbor array per clone, filling by index. Return the mapped start clone."
+  }
+}

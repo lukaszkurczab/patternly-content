@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b08-11",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "stack",
+  "requiredFamilyIds": [
+    "stack"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "exclusive-nested-call-duration",
+    "difficulty": "medium",
+    "questionId": "acm-b08-11-q1",
+    "prompt": "A valid trace has START(id,t) and END(id,t) events for properly nested calls, timestamps nondecreasing integers, and intervals [start,end). Let n be the event count, 0 <= n <= 200,000. An explicit f, 0 <= f <= n, gives the ID domain 0..f-1. The returned array has exactly f entries. For an empty trace f=0. Every start has one matching end; arithmetic fits signed 64-bit. Return an array of exclusive duration totals indexed by ID, with zero for absent IDs. Example START(0,1),START(1,3),END(1,7),END(0,9) -> [4,4].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "exclusive-nested-call-duration-optimal",
+          "text": "Keep active IDs in a stack and previous timestamp. Charge the elapsed interval to the top active ID; push on START and pop on END, then advance previous timestamp.",
+          "grade": "correct",
+          "feedback": "When ID 1 runs from 3 to 7, ID 0 is suspended and receives none of those four time units."
+        },
+        {
+          "optionId": "B",
+          "approachId": "exclusive-nested-call-duration-partial",
+          "text": "For each interval, scan all active frames and find the innermost one before charging.",
+          "grade": "partial",
+          "feedback": "The frame scan can find the right owner, but revisits nested frames for every event."
+        },
+        {
+          "optionId": "C",
+          "approachId": "exclusive-nested-call-duration-wrong",
+          "text": "Charge elapsed time to every active ID.",
+          "grade": "incorrect",
+          "feedback": "Charging every active frame double-counts nested intervals; example would give ID 0 duration 8."
+        },
+        {
+          "optionId": "D",
+          "approachId": "exclusive-nested-call-duration-bruteforce",
+          "text": "For each ID, add every END timestamp and subtract every START timestamp, without excluding child calls.",
+          "grade": "incorrect",
+          "feedback": "In the example, this credits ID 0 with the full 8-unit interval, but its exclusive total is 4 because ID 1 owns the middle interval."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "When ID 1 runs from 3 to 7, ID 0 is suspended and receives none of those four time units.",
+      "details": [
+        "Keep active IDs in a stack and previous timestamp. Charge the elapsed interval to the top active ID; push on START and pop on END, then advance previous timestamp.",
+        "Charge an elapsed interval to the top active call, then apply the event's stack transition and timestamp convention. An outer call's full wall interval includes nested work, so charging it all again would double-count child execution.",
+        "“Keep active IDs in a stack and previous timestamp. Charge the elapsed interval to the top active ID; push on START and pop on END, then advance previous timestamp.”: When ID 1 runs from 3 to 7, ID 0 is suspended and receives none of those four time units.",
+        "“For each interval, scan all active frames and find the innermost one before charging.”: The frame scan can find the right owner, but revisits nested frames for every event.",
+        "“Charge elapsed time to every active ID.”: Charging every active frame double-counts nested intervals; example would give ID 0 duration 8.",
+        "“For each ID, add every END timestamp and subtract every START timestamp, without excluding child calls.”: In the example, this credits ID 0 with the full 8-unit interval, but its exclusive total is 4 because ID 1 owns the middle interval."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "exclusive-nested-call-duration",
+    "difficulty": "medium",
+    "questionId": "acm-b08-11-q2",
+    "prompt": "For exclusive-nested-call-duration-optimal, let n be the number of input commands or tokens. Choose the tightest worst-case time and auxiliary-space pair. Input is immutable; output storage is excluded.",
+    "constraints": [
+      "n is the number of events and 0<=f<=n. IDs, timestamps, differences and sums fit fixed-size words; arithmetic takes constant time.",
+      "Input and the returned f-entry duration array are excluded from auxiliary space. Initializing and writing the output counts in processing time.",
+      "Use an iterative preallocated active-ID stack with constant-time pushes/pops, no hashing, recursion or hidden copying. Initialize previous timestamp on the first event; charge no time while the stack is empty."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-linear",
+          "text": "O(n²) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "logarithmic-linear",
+          "text": "O(log n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-linear"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One event scan and the active-call stack account for work and storage.",
+      "details": [
+        "Each of n events charges one interval to the active top and performs at most one push or pop. Initialization of f<=n output entries costs at most linear time. A deeply nested valid trace retains a linear number of active frames. Output is excluded from auxiliary space; the active stack counts.",
+        "Time: O(n).",
+        "Auxiliary space: O(n).",
+        "“O(n) time, O(1) auxiliary space”: A trace of deeply nested calls retains a linear chain of active call IDs even though accumulated per-function times are output.",
+        "“O(n²) time, O(n) auxiliary space”: Each timestamp interval is charged once to the current top; nested call bodies are not rescanned for their parents.",
+        "“O(log n) time, O(n) auxiliary space”: The final END timestamp can change exclusive duration, so the entire event trace may need inspection."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "linear-constant",
+          "text": "A trace of deeply nested calls retains a linear chain of active call IDs even though accumulated per-function times are output."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "quadratic-linear",
+          "text": "Each timestamp interval is charged once to the current top; nested call bodies are not rescanned for their parents."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "logarithmic-linear",
+          "text": "The final END timestamp can change exclusive duration, so the entire event trace may need inspection."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "exclusive-nested-call-duration-optimal",
+  "methodReveal": {
+    "title": "Maintain the unresolved stack state",
+    "description": "Keep active IDs in a stack and previous timestamp. Charge the elapsed interval to the top active ID; push on START and pop on END, then advance previous timestamp."
+  }
+}

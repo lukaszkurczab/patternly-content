@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-17",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals",
+    "sorting_based"
+  ],
+  "difficulty": "easy",
+  "approachQuestion": {
+    "questionId": "acm-b11-17-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "detect_overlap",
+    "difficulty": "easy",
+    "prompt": "Finding a conflicting pair\n\nGiven n unsorted half-open bookings [start,end), return the original indices of ANY two bookings that overlap, or null if none do. Touching endpoints are not overlap; duplicate positive-length bookings do overlap. Input is immutable. Return a witness, not all conflicting pairs.\n\nInput: bookings=[[8,10],[1,4],[4,7],[3,5]]\nOutput: [1,3]\nIndices are zero-based; other genuine overlap witnesses are accepted.\n\nInput: bookings=[[0,2],[2,4]]\nOutput: null\n\nConstraints: 0 ≤ n ≤ 200000; 0 ≤ start < end ≤ 1000000000. Use comparison-based ordering. Choose best worst-case time.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "adjacent-start-witness",
+          "text": "Copy indexed bookings and sort by start. Check each adjacent pair; return its original indices when the later start is strictly below the earlier end. Return null if no adjacent pair overlaps.",
+          "grade": "correct",
+          "feedback": "If no adjacent pair overlaps, each interval ends no later than the next start, so no nonadjacent pair can overlap either. One adjacent witness suffices; a full merged union is unnecessary."
+        },
+        {
+          "optionId": "B",
+          "approachId": "equal-starts-only",
+          "text": "Group by equal start and return two from any repeated-start group; otherwise return null.",
+          "grade": "incorrect",
+          "feedback": "For [[1,5],[3,7]], the starts differ but the bookings overlap. Equal starts are sufficient, not necessary."
+        },
+        {
+          "optionId": "C",
+          "approachId": "touch-counts-conflict",
+          "text": "Sort by start and return an adjacent pair when later.start ≤ earlier.end.",
+          "grade": "incorrect",
+          "feedback": "For [[0,2],[2,4]], equality only touches an excluded end. This produces a false witness instead of null."
+        },
+        {
+          "optionId": "D",
+          "approachId": "check-every-pair",
+          "text": "Try every pair of original indices and return the first overlapping pair; return null if none overlaps.",
+          "grade": "incorrect",
+          "feedback": "This finds a valid witness or null, but absence of conflict forces checking all pairs. Ordering permits a single adjacent scan after sorting."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Use adjacency as a certificate for existence of any overlap, while returning original-index evidence.",
+      "details": [
+        "Copy bookings with original indices, sort by start using iterative bottom-up merge sort and a reusable buffer, then compare adjacent records until a witness is found or the list ends.",
+        "After sorting starts, any overlapping pair implies an overlapping adjacent pair: if an interval reaches a later start, it also reaches the intervening next start. Preserve original indices to return a witness in input identities.",
+        "“Copy indexed bookings and sort by start. Check each adjacent pair; return its original indices when the later start is strictly below the earlier end. Return null if no adjacent pair overlaps.”: If no adjacent pair overlaps, each interval ends no later than the next start, so no nonadjacent pair can overlap either. One adjacent witness suffices; a full merged union is unnecessary.",
+        "“Group by equal start and return two from any repeated-start group; otherwise return null.”: For [[1,5],[3,7]], the starts differ but the bookings overlap. Equal starts are sufficient, not necessary.",
+        "“Sort by start and return an adjacent pair when later.start ≤ earlier.end.”: For [[0,2],[2,4]], equality only touches an excluded end. This produces a false witness instead of null.",
+        "“Try every pair of original indices and return the first overlapping pair; return null if none overlaps.”: This finds a valid witness or null, but absence of conflict forces checking all pairs. Ordering permits a single adjacent scan after sorting."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-17-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "detect_overlap",
+    "difficulty": "easy",
+    "prompt": "For adjacent-start-witness, n is the booking count. Include the indexed copy and sort buffer; exclude the returned pair or null. Choose the tightest standard worst-case pair.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(n), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O(n²), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O(n log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(n log n), auxiliary space O(1)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-3"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Sorting dominates the adjacent witness scan even if a conflict is found early.",
+      "details": [
+        "The sorting phase takes O(n log n), and the adjacent scan is at most linear. The indexed copy and reusable buffer use O(n); no overlap graph or recursive stack is created. Early witness discovery does not improve the worst-case sorting cost.",
+        "Time: O(n log n).",
+        "Auxiliary space: O(n).",
+        "Comparison ordering by iterative merge sort; original-index witness.",
+        "“Time O(n), auxiliary space O(1)”: An adjacent scan is linear only after sorting. This implementation also creates indexed copies and a merge buffer.",
+        "“Time O(n²), auxiliary space O(n)”: Pair enumeration is not performed. After sorting, only neighboring records are tested.",
+        "“Time O(n log n), auxiliary space O(1)”: The copy preserving original indices and reusable sorting buffer are auxiliary arrays and cannot be excluded with the returned witness."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "An adjacent scan is linear only after sorting. This implementation also creates indexed copies and a merge buffer."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-2",
+          "text": "Pair enumeration is not performed. After sorting, only neighboring records are tested."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-4",
+          "text": "The copy preserving original indices and reusable sorting buffer are auxiliary arrays and cannot be excluded with the returned witness."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "adjacent-start-witness",
+  "methodReveal": {
+    "title": "Analyze adjacent-start-witness",
+    "description": "Copy bookings with original indices, sort by start using iterative bottom-up merge sort and a reusable buffer, then compare adjacent records until a witness is found or the list ends."
+  }
+}

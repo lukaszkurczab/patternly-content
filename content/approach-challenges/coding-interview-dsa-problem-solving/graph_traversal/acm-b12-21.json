@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-21",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b12-21-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "hard",
+    "prompt": "Cables with no substitute. In an undirected network, return every cable whose removal would increase the number of connected components. Return each cable once as [minEndpoint,maxEndpoint], in any order. The graph may already be disconnected.\n\nInput: read-only adjacency lists for IDs 0..V-1, 1 <= V <= 200000, 0 <= E <= 400000. The graph is simple: no self-loops or parallel edges. Every cable is listed at both endpoints. Output [] when no cable is critical.\n\nExample: lists=[[1],[0,2,3],[1,3],[1,2],[]], output=[[0,1]]. The triangle on 1,2,3 provides substitutes for its three cables; vertex 4 is isolated.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "dfs-lowlink-bridges",
+          "text": "Run a DFS forest with discovery times and low values. Skip only the parent edge. Fold an already discovered non-parent neighbor’s discovery time into low[u]; after finishing a DFS child v, fold low[v] into low[u]. Emit tree edge u-v exactly when low[v] > discovery[u].",
+          "grade": "correct",
+          "feedback": "The strict inequality means the child subtree has no edge back to u or an earlier ancestor, so removing its only tree connection separates that subtree. A return connection prevents that separation."
+        },
+        {
+          "optionId": "B",
+          "approachId": "recursive-lowlink-bridges",
+          "text": "Use recursive DFS with the same discovery/low update rules and strict child test, scanning all components. Assume enough call-stack capacity for V frames.",
+          "grade": "correct",
+          "feedback": "Recursion implements the same postorder calculation. Including its call stack, it has the same time and auxiliary-space bounds as explicit resumable frames."
+        },
+        {
+          "optionId": "C",
+          "approachId": "emit-all-tree-edges",
+          "text": "Run a DFS forest and emit every edge used to discover a new vertex.",
+          "grade": "incorrect",
+          "feedback": "A triangle has two DFS tree edges but no critical cable. Non-tree edges can provide an alternate route around a tree edge."
+        },
+        {
+          "optionId": "D",
+          "approachId": "nonstrict-bridge-test",
+          "text": "Use the discovery/low DFS rules but emit u-v whenever low[v] >= discovery[u].",
+          "grade": "incorrect",
+          "feedback": "In a triangle rooted at 0, a child subtree can return to 0, giving low[child]=discovery[0]. Removing the root-child edge still leaves an alternate triangle route. Equality does not make a cable critical."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A critical edge requires the child subtree to have no return route even to its parent. This makes the comparison strict, unlike the related vertex-removal criterion.",
+      "details": [
+        "Initialize discovery to unseen. For every unseen root, start DFS frames containing vertex, parent and next-neighbor index. On discovery, assign increasing discovery[u] and low[u]=discovery[u]. While scanning u, skip its parent; an unseen neighbor becomes a child frame, and a discovered non-parent neighbor updates low[u] with its discovery time. When child v finishes, update low[parent] from low[v] and append the normalized parent-v pair if low[v] > discovery[parent]. Finish every component.",
+        "A child edge is a bridge exactly when its subtree cannot reach the parent or an earlier ancestor: low[child]>discovery[parent]. Equality means an alternative route reaches the parent, so the strict comparison matters.",
+        "“Run a DFS forest with discovery times and low values. Skip only the parent edge. Fold an already discovered non-parent neighbor’s discovery time into low[u]; after finishing a DFS child v, fold low[v] into low[u]. Emit tree edge u-v exactly when low[v] > discovery[u].”: The strict inequality means the child subtree has no edge back to u or an earlier ancestor, so removing its only tree connection separates that subtree. A return connection prevents that separation.",
+        "“Use recursive DFS with the same discovery/low update rules and strict child test, scanning all components. Assume enough call-stack capacity for V frames.”: Recursion implements the same postorder calculation. Including its call stack, it has the same time and auxiliary-space bounds as explicit resumable frames.",
+        "“Run a DFS forest and emit every edge used to discover a new vertex.”: A triangle has two DFS tree edges but no critical cable. Non-tree edges can provide an alternate route around a tree edge.",
+        "“Use the discovery/low DFS rules but emit u-v whenever low[v] >= discovery[u].”: In a triangle rooted at 0, a child subtree can return to 0, giving low[child]=discovery[0]. Removing the root-child edge still leaves an alternate triangle route. Equality does not make a cable critical."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-21-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "hard",
+    "prompt": "Analyze dfs-lowlink-bridges exactly as revealed. V counts vertices and E undirected simple edges, stored twice. Preallocate V-entry discovery/low arrays and V fixed-size DFS frames; each frame resumes at its saved neighbor index. No recursion is used in this analyzed method. Use a result buffer for at most V-1 bridge pairs, returning only the filled portion without a second copy. Include result-writing time but exclude result storage. Constant-time indices, arithmetic and stack operations; no hashing, shifting, input copies or amortized growth. Include array initialization and root scanning.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(E(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Saved DFS frame positions inspect adjacency entries once and combine low values on return.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: saved frame indices inspect each of 2E adjacency entries once, each vertex is discovered/finished once, and at most V-1 critical pairs are written. Discovery, low and frames use O(V). The option “O(V + E) time, O(1) auxiliary space” drops those structures. C repeatedly removes edges and searches again, which the revealed postorder calculation avoids. The option “O(V + E) time, O(V + E) auxiliary space” counts edge storage although the original lists are used without copying and returned pairs are excluded.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "dfs-lowlink-bridges",
+  "methodReveal": {
+    "title": "Return reachability below each DFS edge",
+    "description": "Initialize discovery to unseen. For every unseen root, start DFS frames containing vertex, parent and next-neighbor index. On discovery, assign increasing discovery[u] and low[u]=discovery[u]. While scanning u, skip its parent; an unseen neighbor becomes a child frame, and a discovered non-parent neighbor updates low[u] with its discovery time. When child v finishes, update low[parent] from low[v] and append the normalized parent-v pair if low[v] > discovery[parent]. Finish every component."
+  }
+}

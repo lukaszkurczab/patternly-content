@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-22",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b12-22-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "hard",
+    "prompt": "Hubs that hold a network together. In an undirected network, return all vertex IDs whose deletion, together with incident edges, would increase the total number of connected components among the remaining vertices. Return each such ID once, in any order. The original graph may be disconnected; deleting an isolated vertex decreases the component count and must not be reported.\n\nInput: read-only adjacency lists for IDs 0..V-1, 1 <= V <= 200000, 0 <= E <= 400000. No self-loops or parallel edges; each edge appears at both endpoints.\n\nExample 1: lists=[[1],[0,2],[1],[]], output=[1].\nExample 2: lists=[[1,2],[0,2],[0,1]], output=[].\nExample 3: lists=[[1,2],[0],[0]], output=[0].",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "dfs-lowlink-articulations",
+          "text": "Run a DFS forest with discovery and low values. A non-root u is critical if some DFS child v has low[v] >= discovery[u]. A DFS root is critical only when it has at least two DFS children. Deduplicate reports with one boolean flag per vertex.",
+          "grade": "correct",
+          "feedback": "A non-root child subtree lacking a return edge above u becomes separated when u disappears; returning only to u does not help. A root has no parent side, so it separates the component only if multiple independent DFS child subtrees remain."
+        },
+        {
+          "optionId": "B",
+          "approachId": "recursive-lowlink-articulations",
+          "text": "Use recursive DFS with the same low updates, non-root test and special root child-count test; keep critical flags and scan every component. Assume enough call-stack capacity for V frames.",
+          "grade": "correct",
+          "feedback": "The same postorder invariant and root exception apply regardless of whether frames are explicit or recursive. The call stack is included in its matching auxiliary-space bound."
+        },
+        {
+          "optionId": "C",
+          "approachId": "same-rule-for-roots",
+          "text": "Apply low[child] >= discovery[u] to every u, including each DFS root with one child.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[0]], a root has one child satisfying the comparison, yet deleting either endpoint leaves one component, equal to the original count. A single root child does not create two remaining pieces."
+        },
+        {
+          "optionId": "D",
+          "approachId": "strict-nonroot-test",
+          "text": "Use the correct root child-count rule, but for non-roots require low[child] > discovery[u] rather than >=.",
+          "grade": "incorrect",
+          "feedback": "For lists=[[1],[0,2,3],[1,3],[1,2]], root at 0. Vertex 1 has a child subtree through the triangle with low equal to discovery[1]. Removing 1 still separates vertex 0 from {2,3}, so excluding equality misses a critical hub."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Vertex removal deletes every return edge to the vertex itself, so equality is critical for non-roots. A DFS root needs its own child-count rule.",
+      "details": [
+        "Use an iterative DFS forest with frames storing vertex, parent, next-neighbor index and DFS child count. Initialize discovery/low on frame creation. Skip only the parent edge; discovered non-parent neighbors lower low[u] using their discovery times. When child v finishes, propagate low[v] to its parent u. If u is not a root and low[v] >= discovery[u], set critical[u]. When a root finishes, set its flag exactly when it has at least two DFS children. Finally scan flags and return the marked IDs once each.",
+        "A non-root separates a child subtree when low[child]>=discovery[parent]. A DFS root instead needs at least two DFS children. Applying the non-root rule to the root would falsely mark a single-branch root.",
+        "“Run a DFS forest with discovery and low values. A non-root u is critical if some DFS child v has low[v] >= discovery[u]. A DFS root is critical only when it has at least two DFS children. Deduplicate reports with one boolean flag per vertex.”: A non-root child subtree lacking a return edge above u becomes separated when u disappears; returning only to u does not help. A root has no parent side, so it separates the component only if multiple independent DFS child subtrees remain.",
+        "“Use recursive DFS with the same low updates, non-root test and special root child-count test; keep critical flags and scan every component. Assume enough call-stack capacity for V frames.”: The same postorder invariant and root exception apply regardless of whether frames are explicit or recursive. The call stack is included in its matching auxiliary-space bound.",
+        "“Apply low[child] >= discovery[u] to every u, including each DFS root with one child.”: For lists=[[1],[0]], a root has one child satisfying the comparison, yet deleting either endpoint leaves one component, equal to the original count. A single root child does not create two remaining pieces.",
+        "“Use the correct root child-count rule, but for non-roots require low[child] > discovery[u] rather than >=.”: For lists=[[1],[0,2,3],[1,3],[1,2]], root at 0. Vertex 1 has a child subtree through the triangle with low equal to discovery[1]. Removing 1 still separates vertex 0 from {2,3}, so excluding equality misses a critical hub."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-22-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_dfs",
+    "difficulty": "hard",
+    "prompt": "Analyze dfs-lowlink-articulations as revealed. V counts vertices and E simple undirected edges stored twice. Initialize V-entry discovery/low/critical arrays, reserve V fixed-size resumable frames and scan every root. After traversal scan all V flags and fill a result buffer of at most V IDs, without copying it to a second result. Count result-writing time; exclude returned result storage. Include all arrays and frames. Indexing, comparisons and stack operations are constant time; no recursion, hashing, amortized growth, shifting or input copies.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V(V + E)) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(V + E) time, O(V + E) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One DFS forest computes discovery/low values and deduplicated critical-vertex flags.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: every vertex has one frame lifetime, each of 2E adjacency entries is inspected once, and initialization/final flag scans cost V. Discovery, low, critical flags and frames require O(V). The option “O(V + E) time, O(1) auxiliary space” omits this storage. The option “O(V(V + E)) time, O(V) auxiliary space” models deletion and fresh search for each candidate hub, which the single DFS forest avoids. The option “O(V + E) time, O(V + E) auxiliary space” counts edge copies that are not made; the only variable-size result is excluded.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "dfs-lowlink-articulations",
+  "methodReveal": {
+    "title": "Count root branches, test non-root returns",
+    "description": "Use an iterative DFS forest with frames storing vertex, parent, next-neighbor index and DFS child count. Initialize discovery/low on frame creation. Skip only the parent edge; discovered non-parent neighbors lower low[u] using their discovery times. When child v finishes, propagate low[v] to its parent u. If u is not a root and low[v] >= discovery[u], set critical[u]. When a root finishes, set its flag exactly when it has at least two DFS children. Finally scan flags and return the marked IDs once each."
+  }
+}

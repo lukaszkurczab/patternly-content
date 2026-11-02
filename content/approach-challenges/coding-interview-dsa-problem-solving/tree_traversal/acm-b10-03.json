@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b10-03",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "tree_traversal",
+  "requiredFamilyIds": [
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b10-03-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "carry_path_and_aggregate_state",
+    "difficulty": "medium",
+    "prompt": "New High Marks. Count the nodes in a non-empty binary tree whose integer score is strictly greater than every proper ancestor score. A proper ancestor excludes the node itself; the root always qualifies. Return only the count.\n\nIn examples, x(left,right) denotes a node labelled x, and - denotes an absent child. Example 1: Input: 5(3(6(-,-),5(-,-)),7(7(-,-),9(-,-))). Output: 4: the root 5, the 6, the first 7, and 9 qualify. Example 2: Input: -4(-,-). Output: 1. Example 3: Input: 2(2(-,-),1(-,-)). Output: 1.\n\nConstraints: 1 <= n <= 200000; scores are signed 32-bit integers and may repeat. The immutable tree has child pointers only, no cycles or shared nodes. Shape is unrestricted. Do not reserve a legal score as a sentinel for the root.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "path-max",
+          "approachId": "path-max",
+          "text": "Count the root separately. Use a depth-first stack whose frames hold a node and its greatest proper-ancestor score. Compare at that node, then pass the updated maximum to each child.",
+          "grade": "correct",
+          "feedback": "Each node receives exactly the maximum on its own ancestor path. A separate root case avoids sentinel collisions."
+        },
+        {
+          "optionId": "copy-paths",
+          "approachId": "copy-paths",
+          "text": "For each child copy its complete ancestor-score list. Scan that list when testing the child; the empty root list qualifies.",
+          "grade": "partial",
+          "feedback": "This uses the right comparison domain for every input, but copies and rescans long paths. One carried maximum replaces each whole list."
+        },
+        {
+          "optionId": "parent-only",
+          "approachId": "parent-only",
+          "text": "Count the root and every other node whose score exceeds its immediate parent score.",
+          "grade": "incorrect",
+          "feedback": "In 8(3(5(-,-),-),-), score 5 exceeds its parent but not ancestor 8. The correct count is 1; this returns 2."
+        },
+        {
+          "optionId": "global-max",
+          "approachId": "global-max",
+          "text": "Traverse left before right and count successive record scores using one maximum over all nodes already visited.",
+          "grade": "incorrect",
+          "feedback": "For 5(10(-,-),7(-,-)), all three nodes qualify, but the unrelated 10 suppresses 7."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Summarize proper ancestors with path-local state; a maximum from another branch is irrelevant.",
+      "details": [
+        "Count the root once. Push each child with the root score as its ancestor maximum. Pop a frame, compare strictly against its maximum, and push existing children with the larger of that maximum and the current score. Push right before left to keep depth-first order; retain no path lists.",
+        "A node qualifies only when strictly greater than every ancestor, so carry the maximum of the entire ancestor path. Equal scores fail the strict test. Pass the updated maximum independently to each child.",
+        "“Count the root separately. Use a depth-first stack whose frames hold a node and its greatest proper-ancestor score. Compare at that node, then pass the updated maximum to each child.”: Each node receives exactly the maximum on its own ancestor path. A separate root case avoids sentinel collisions.",
+        "“For each child copy its complete ancestor-score list. Scan that list when testing the child; the empty root list qualifies.”: This uses the right comparison domain for every input, but copies and rescans long paths. One carried maximum replaces each whole list.",
+        "“Count the root and every other node whose score exceeds its immediate parent score.”: In 8(3(5(-,-),-),-), score 5 exceeds its parent but not ancestor 8. The correct count is 1; this returns 2.",
+        "“Traverse left before right and count successive record scores using one maximum over all nodes already visited.”: For 5(10(-,-),7(-,-)), all three nodes qualify, but the unrelated 10 suppresses 7."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b10-03-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "carry_path_and_aggregate_state",
+    "difficulty": "medium",
+    "prompt": "Analyze only the revealed path-maximum stack. Let n be the node count and h the number of nodes on a longest root-to-leaf path. What is the tight worst-case pair? Include the pending node/maximum frames and scalar state; exclude the input tree and scalar result.",
+    "constraints": [
+      "All legal shapes are allowed; do not assume balance. Heights count nodes, not edges.",
+      "Pointer access, comparisons, arithmetic on the stated integer ranges, and allocation/release of a fixed-size frame take constant time. No hashing is used. Count all live explicit frames; the method does not use language recursion or copy paths/subtrees unless explicitly stated."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-height",
+          "text": "O(n) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-height",
+          "text": "O(n²) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "linear-n",
+          "text": "O(n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-height"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One maximum comparison per node uses height-bounded depth-first state.",
+      "details": [
+        "Each node is tested once with constant work. Pending siblings along one depth-first path use O(h) frames, with branching shapes attaining that scale.",
+        "Inductively, the maximum passed to a child is exactly the maximum over that child’s proper ancestors. Strict comparison excludes ties; counting the root separately handles every legal score.",
+        "“O(n) time, O(h) auxiliary space”: Each node is tested once with constant work. Pending siblings along one depth-first path use O(h) frames, with branching shapes attaining that scale.",
+        "“O(n²) time, O(h) auxiliary space”: Completed subtrees are not scanned again; nesting the control flow does not itself multiply the node visits.",
+        "“O(n) time, O(1) auxiliary space”: The live explicit stack is auxiliary memory and can grow with tree height.",
+        "“O(n) time, O(n) auxiliary space”: This is a looser upper bound since h <= n; the height-sensitive bound is tighter and no full node table is retained."
+      ]
+    }
+  },
+  "analyzedApproachId": "path-max",
+  "methodReveal": {
+    "title": "Ancestor maximum",
+    "description": "Count the root once. Push each child with the root score as its ancestor maximum. Pop a frame, compare strictly against its maximum, and push existing children with the larger of that maximum and the current score. Push right before left to keep depth-first order; retain no path lists."
+  }
+}

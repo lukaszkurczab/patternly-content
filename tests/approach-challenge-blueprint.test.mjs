@@ -17,6 +17,8 @@ test("Coding Interview track config exposes the exact versioned Approach Challen
   assert.equal(blueprint.occurrencesPerProblem, 2);
   assert.deepEqual(blueprint.defaultDifficulties, ["easy", "medium"]);
   assert.equal(blueprint.timerKind, "none");
+  assert.equal(blueprint.freeProblemCount, 16);
+  assert.equal(blueprint.premiumProblemCount, 456);
 });
 
 test("blueprint validation rejects drift, unknown fields and invalid session lengths", async () => {

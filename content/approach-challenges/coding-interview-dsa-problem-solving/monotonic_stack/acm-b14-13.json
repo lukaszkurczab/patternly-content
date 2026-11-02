@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b14-13",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "monotonic_stack",
+  "requiredFamilyIds": [
+    "monotonic_stack",
+    "arrays_and_strings"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b14-13-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "A binary image has r rows and c columns, with 1 ≤ r,c and r×c ≤ 200,000. Count all nonempty axis-aligned rectangular regions containing only 1s. Rectangles with different boundaries are distinct. Example: [[1,1],[1,1]] returns 9: four single cells, two horizontal pairs, two vertical pairs, and the full square. Choose the best approach.",
+    "constraints": [
+      "The immutable binary image has r rows and c columns, with 1 ≤ r,c and r×c ≤ 200,000. Counts and arithmetic results fit signed 64-bit words; access and arithmetic have unit cost.",
+      "Input and returned output are excluded from auxiliary space. Working stacks, arrays, and copies count. No hashing is used."
+    ],
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "height-suffix-totals",
+          "text": "Maintain consecutive-1 column heights for each row. Within a row keep increasing (height, count) groups and a running total S. For height h start count=1; pop groups with height at least h, subtracting height×count from S and merging their counts. Push (h,count), add h×count to S, and add S to the answer. Reset groups and S for each row.",
+          "grade": "correct",
+          "feedback": "For a fixed bottom row and right column, each left boundary contributes the minimum height over its column interval. S is the sum of those suffix minima; height groups compress suffixes with the same minimum, and each height unit corresponds to a distinct top row."
+        },
+        {
+          "optionId": "B",
+          "approachId": "sum-histogram-heights",
+          "text": "Sum every consecutive-1 column height over all rows and return that total.",
+          "grade": "incorrect",
+          "feedback": "This counts only width-one rectangles. For [[1,1]], it returns 2 instead of 3."
+        },
+        {
+          "optionId": "C",
+          "approachId": "one-largest-per-row",
+          "text": "For every row compute the area of its largest histogram rectangle and sum these areas.",
+          "grade": "incorrect",
+          "feedback": "Areas do not count distinct boundary choices. For [[1,1]], the largest area is 2, but there are 3 all-1 rectangles."
+        },
+        {
+          "optionId": "D",
+          "approachId": "enumerate-and-inspect-rectangles",
+          "text": "Enumerate every rectangle’s four boundaries and inspect its cells, counting it if all are 1.",
+          "grade": "incorrect",
+          "feedback": "It counts correctly but repeatedly inspects a huge collection of overlapping rectangles. Suffix-height groups aggregate these choices without enumerating them."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Maintain the sum of minima of all suffixes through compressed height groups while accumulating rectangle counts.",
+      "details": [
+        "For each bottom row update column heights. Scan them with a stack of increasing height groups, tracking how many suffixes share each height. When a smaller or equal height arrives, replace affected groups and adjust the suffix-minimum sum. Add that sum for each right column.",
+        "For a fixed bottom row and right column, the sum of suffix minimum heights counts all rectangles ending there. Height groups compress equal minima across different starts; adding only the largest rectangle would miss smaller ones.",
+        "“Maintain consecutive-1 column heights for each row. Within a row keep increasing (height, count) groups and a running total S. For height h start count=1; pop groups with height at least h, subtracting height×count from S and merging their counts. Push (h,count), add h×count to S, and add S to the answer. Reset groups and S for each row.”: For a fixed bottom row and right column, each left boundary contributes the minimum height over its column interval. S is the sum of those suffix minima; height groups compress suffixes with the same minimum, and each height unit corresponds to a distinct top row.",
+        "“Sum every consecutive-1 column height over all rows and return that total.”: This counts only width-one rectangles. For [[1,1]], it returns 2 instead of 3.",
+        "“For every row compute the area of its largest histogram rectangle and sum these areas.”: Areas do not count distinct boundary choices. For [[1,1]], the largest area is 2, but there are 3 all-1 rectangles.",
+        "“Enumerate every rectangle’s four boundaries and inspect its cells, counting it if all are 1.”: It counts correctly but repeatedly inspects a huge collection of overlapping rectangles. Suffix-height groups aggregate these choices without enumerating them."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b14-13-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "maintain_monotonic_stack_invariant",
+    "difficulty": "hard",
+    "prompt": "For height-suffix-totals, choose the tightest worst-case time and auxiliary-space pair. Let n=r×c. Store c heights and a reused stack of at most c groups. The result is a scalar count. All counts and products fit signed 64-bit words.",
+    "constraints": [
+      "Stack push, pop, and top take amortized constant time using a growable array; each entry uses a constant number of words. Count the working stack, but exclude input and final output. No recursive call stack or hash table is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "tight",
+          "text": "O(n) time, O(c) auxiliary space"
+        },
+        {
+          "optionId": "rescan",
+          "text": "O(n²) time, O(c) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "sorting",
+          "text": "O(n log n) time, O(c) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "tight"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Per-row group pushes/pops are linear and use column-sized state.",
+      "details": [
+        "Each row processes c heights, and each group is pushed once and popped at most once. Across all rows time is O(r×c)=O(n). Heights and the reused group stack use O(c) auxiliary space.",
+        "Time: O(n).",
+        "Auxiliary space: O(c)."
+      ]
+    }
+  },
+  "analyzedApproachId": "height-suffix-totals",
+  "methodReveal": {
+    "title": "Method for the next question",
+    "description": "For each bottom row update column heights. Scan them with a stack of increasing height groups, tracking how many suffixes share each height. When a smaller or equal height arrives, replace affected groups and adjust the suffix-minimum sum. Add that sum for each right column."
+  }
+}

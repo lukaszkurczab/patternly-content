@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b13-14",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "dynamic_programming_intro",
+  "requiredFamilyIds": [
+    "dynamic_programming_intro"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b13-14-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "dynamic_programming_intro",
+    "mentalUnitId": "define_dp_state",
+    "prompt": "You may buy and sell one share of an asset repeatedly, holding at most one share. A sale forces the next whole day to be idle: a new purchase is allowed only on the day after that idle day. At most one action occurs per day. Return maximum profit, ending without a share; doing nothing is allowed. Examples: prices=[1,2,3,0,2] → 3; [4,3,2] → 0. Which approach is most suitable?",
+    "constraints": [
+      "1 ≤ n ≤ 200000; 0 ≤ price[i] ≤ 1000000000. Input is read-only; profit fits signed 64-bit. No fees or short selling."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "state-method-14",
+          "text": "After day zero set hold=−price[0], sold=unreachable, rest=0. For each later price p compute from the old states: newHold=max(hold,rest−p), newSold=hold+p, newRest=max(rest,sold). Return max(rest,sold) after the last day, ignoring unreachable values.",
+          "grade": "correct",
+          "feedback": "The resting state is eligible to buy on the next day, while a just-sold state is not. Using only old states enforces the one-action and idle-day rules."
+        },
+        {
+          "optionId": "B",
+          "approachId": "full-history-14",
+          "text": "Use these three states and transitions but retain the state triple for every day.",
+          "grade": "partial",
+          "feedback": "This computes the correct result on the whole domain, but retains old states that future transitions never read. Removing those states preserves correctness and reduces auxiliary storage."
+        },
+        {
+          "optionId": "C",
+          "approachId": "flawed-method-14",
+          "text": "Add every positive day-to-day price increase.",
+          "grade": "incorrect",
+          "feedback": "For [1,2,3,0,2], this returns 4 by selling on day 2 then buying on day 3, violating the idle day; the valid maximum is 3."
+        },
+        {
+          "optionId": "D",
+          "approachId": "flawed-alternative-14",
+          "text": "Allow newHold=max(oldHold,oldRest−p,oldSold−p).",
+          "grade": "incorrect",
+          "feedback": "For [1,3,0,4], this permits selling on day 1 and buying on day 2, yielding 6. A legal strategy has maximum profit 4."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Encode a cooldown rule as distinct future-eligibility states rather than merging all non-holding histories.",
+      "details": [
+        "Store the three end-of-day states hold, sold, and rest, plus a fixed number of temporaries. Scan all n days once using only the previous-day states for every transition. Return the better non-holding state.",
+        "Use previous-day hold, sold, and rest states for every transition. Buying from today's sold value would bypass the required cooldown. Unreachable states need guarded arithmetic rather than an ordinary numeric zero.",
+        "“After day zero set hold=−price[0], sold=unreachable, rest=0. For each later price p compute from the old states: newHold=max(hold,rest−p), newSold=hold+p, newRest=max(rest,sold). Return max(rest,sold) after the last day, ignoring unreachable values.”: The resting state is eligible to buy on the next day, while a just-sold state is not. Using only old states enforces the one-action and idle-day rules.",
+        "“Use these three states and transitions but retain the state triple for every day.”: This computes the correct result on the whole domain, but retains old states that future transitions never read. Removing those states preserves correctness and reduces auxiliary storage.",
+        "“Add every positive day-to-day price increase.”: For [1,2,3,0,2], this returns 4 by selling on day 2 then buying on day 3, violating the idle day; the valid maximum is 3.",
+        "“Allow newHold=max(oldHold,oldRest−p,oldSold−p).”: For [1,3,0,4], this permits selling on day 1 and buying on day 2, yielding 6. A legal strategy has maximum profit 4."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b13-14-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "dynamic_programming_intro",
+    "mentalUnitId": "define_dp_state",
+    "prompt": "Store the three end-of-day states hold, sold, and rest, plus a fixed number of temporaries. Scan all n days once using only the previous-day states for every transition. Return the better non-holding state. Analyze this fixed implementation. N=n. Choose the tightest worst-case time and auxiliary-space pair.",
+    "constraints": [
+      "Array indexing and word arithmetic take constant time. No hashing, amortized containers, recursion, slicing, or input copying is used. Count all allocated work arrays and temporaries; exclude the read-only input and scalar output.",
+      "Include initialization; treat the stated dimensions as variable parameters within their bounds. Use a word per stored counter or flag, not a packed bitset."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "cost-0",
+          "text": "O(N) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "cost-1",
+          "text": "O(N²) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "cost-2",
+          "text": "O(N) time, O(N) auxiliary space"
+        },
+        {
+          "optionId": "cost-3",
+          "text": "O(N) time, O(log(N+1)) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "cost-0"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Three state transitions per day require only old and new triples.",
+      "details": [
+        "Three states are updated with constant work on each day. Only old and new triples are live. An unreachable sentinel is checked before arithmetic, and no histories or transaction lists are created.",
+        "Time: O(N).",
+        "Auxiliary space: O(1).",
+        "“O(N²) time, O(1) auxiliary space”: The three states summarize prior trade histories; there is no loop over earlier buy or sell days.",
+        "“O(N) time, O(N) auxiliary space”: Only old and new state triples are retained, not a per-day history.",
+        "“O(N) time, O(log(N+1)) auxiliary space”: There is no recursive stack or search tree. A fixed number of state values and temporaries suffices."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-1",
+          "text": "The three states summarize prior trade histories; there is no loop over earlier buy or sell days."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-2",
+          "text": "Only old and new state triples are retained, not a per-day history."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "cost-3",
+          "text": "There is no recursive stack or search tree. A fixed number of state values and temporaries suffices."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "state-method-14",
+  "methodReveal": {
+    "title": "The fixed state method",
+    "description": "Store the three end-of-day states hold, sold, and rest, plus a fixed number of temporaries. Scan all n days once using only the previous-day states for every transition. Return the better non-holding state."
+  }
+}

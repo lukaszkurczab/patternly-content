@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b10-08",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "tree_traversal",
+  "requiredFamilyIds": [
+    "tree_traversal"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b10-08-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "subtree_return_values",
+    "difficulty": "medium",
+    "prompt": "Assembly Formula. A non-empty binary tree describes an arithmetic formula. A leaf stores an integer. Every internal node stores one operator from +, -, * and has exactly two children. Return the formula value, taking the left child as the first operand and the right child as the second.\n\nExample 1: Input: -( *(3,4), +(2,5) ). Output: 5, because 12-7=5. Example 2: Input: -(2,9). Output: -7. Example 3: Input: leaf -6. Output: -6. Parentheses in this notation indicate children, not an extra operator.\n\nConstraints: 1 <= n <= 199999 nodes; leaf values are between -1000 and 1000. Every intermediate and final result fits a signed 64-bit integer. The immutable tree has child pointers only, no cycles or shared nodes; shape is unrestricted. Operator nodes are explicitly distinguished from integer leaves. Do not rewrite or reorder operands.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "formula-frames",
+          "approachId": "formula-frames",
+          "text": "Use postorder frames holding a phase and fixed-size child results. After both children finish, apply the operator to left result then right result, and return the value to the parent.",
+          "grade": "correct",
+          "feedback": "A parent receives the complete values of its operands, and retaining which side produced each value preserves subtraction order."
+        },
+        {
+          "optionId": "formula-text",
+          "approachId": "formula-text",
+          "text": "At each node construct a fully parenthesized expression string by copying its complete child strings; parse and evaluate the root string exactly with 64-bit arithmetic.",
+          "grade": "partial",
+          "feedback": "Full parentheses preserve the formula, so this works. Repeatedly copying subtree text and parsing it is removable: the parent only needs the two child values."
+        },
+        {
+          "optionId": "formula-root-first",
+          "approachId": "formula-root-first",
+          "text": "Apply each internal operator as soon as the node is entered, using zero for any child value not yet computed, and never revise that result.",
+          "grade": "incorrect",
+          "feedback": "For +(2,3) the children are not computed on entry, so this returns 0 instead of 5."
+        },
+        {
+          "optionId": "formula-swap",
+          "approachId": "formula-swap",
+          "text": "Evaluate both child subtrees, then apply the parent operator with the larger child value first.",
+          "grade": "incorrect",
+          "feedback": "Subtraction is ordered. For -(2,9), this returns 7 instead of -7."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Evaluate child results before their parent and preserve operand order for noncommutative operators.",
+      "details": [
+        "Use explicit frames with entry, left-done, and right-done phases. A leaf returns its stored integer. An internal node saves the left result, obtains the right result, applies its operator in left-right order, and passes the resulting integer to its parent. Discard completed child frames.",
+        "Compute both child results before applying the parent's operator, preserving left/right operand order. Completed child frames can be released after returning their scalars; storing every subtree value is unnecessary.",
+        "“Use postorder frames holding a phase and fixed-size child results. After both children finish, apply the operator to left result then right result, and return the value to the parent.”: A parent receives the complete values of its operands, and retaining which side produced each value preserves subtraction order.",
+        "“At each node construct a fully parenthesized expression string by copying its complete child strings; parse and evaluate the root string exactly with 64-bit arithmetic.”: Full parentheses preserve the formula, so this works. Repeatedly copying subtree text and parsing it is removable: the parent only needs the two child values.",
+        "“Apply each internal operator as soon as the node is entered, using zero for any child value not yet computed, and never revise that result.”: For +(2,3) the children are not computed on entry, so this returns 0 instead of 5.",
+        "“Evaluate both child subtrees, then apply the parent operator with the larger child value first.”: Subtraction is ordered. For -(2,9), this returns 7 instead of -7."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b10-08-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "tree_traversal",
+    "mentalUnitId": "subtree_return_values",
+    "difficulty": "medium",
+    "prompt": "For the revealed formula frame method let n be the node count and h the tree height in nodes. Choose the tight worst-case pair for time and auxiliary space. Include frames and saved operand values; exclude the tree and scalar result. All arithmetic fits the stated machine integer range and takes constant time; no strings are built.",
+    "constraints": [
+      "All legal shapes are allowed; do not assume balance. Heights count nodes, not edges.",
+      "Pointer access, comparisons, arithmetic on the stated integer ranges, and allocation/release of a fixed-size frame take constant time. No hashing is used. Count all live explicit frames; the method does not use language recursion or copy paths/subtrees unless explicitly stated."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-height",
+          "text": "O(n) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-height",
+          "text": "O(n²) time, O(h) auxiliary space"
+        },
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "linear-n",
+          "text": "O(n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-height"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Evaluate each node once using fixed-size frames on the active ancestor path.",
+      "details": [
+        "Each node returns one value after constant work, including one operator application for an internal node. The active ancestor frames have fixed-size fields and use O(h) space; a full binary comb can attain this scale.",
+        "Induction on subtrees gives the exact value at every returned frame. Leaves give their integers; internal frames apply their specified operator to the correct ordered operand values.",
+        "“O(n) time, O(h) auxiliary space”: Each node returns one value after constant work, including one operator application for an internal node. The active ancestor frames have fixed-size fields and use O(h) space; a full binary comb can attain this scale.",
+        "“O(n²) time, O(h) auxiliary space”: Completed subtrees are not scanned again; nesting the control flow does not itself multiply the node visits.",
+        "“O(n) time, O(1) auxiliary space”: The live explicit stack is auxiliary memory and can grow with tree height.",
+        "“O(n) time, O(n) auxiliary space”: This is a looser upper bound since h <= n; the height-sensitive bound is tighter and no full node table is retained."
+      ]
+    }
+  },
+  "analyzedApproachId": "formula-frames",
+  "methodReveal": {
+    "title": "Evaluate after both operands",
+    "description": "Use explicit frames with entry, left-done, and right-done phases. A leaf returns its stored integer. An internal node saves the left result, obtains the right result, applies its operator in left-right order, and passes the resulting integer to its parent. Discard completed child frames."
+  }
+}

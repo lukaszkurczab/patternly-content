@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b12-19",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "graph_traversal",
+  "requiredFamilyIds": [
+    "graph_traversal"
+  ],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b12-19-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_bfs",
+    "difficulty": "hard",
+    "prompt": "Free links and paid links. In a directed network, each edge costs either 0 or 1 credit. Given s and t, return the minimum total credits for a directed walk from s to t, or -1 if unreachable. A zero-edge walk from s to itself costs zero. Zero-cost cycles are legal.\n\nInput: read-only outgoing lists of (neighbor,cost), vertex IDs 0..V-1; 1 <= V <= 200000, 0 <= E <= 400000. No duplicate ordered edges; self-loops are permitted. Every cost is exactly 0 or 1. Optimize worst-case running time; there is no tie-break on which minimum-cost walk is chosen. Output only the cost.\n\nExample: edges=[(0,1,1),(0,2,0),(2,1,0)], s=0,t=1, output=0, via 0->2->1.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "zero-one-deque",
+          "text": "Use tentative distances and a deque of (vertex,distanceSnapshot). Start s at zero. Pop from the front, skip stale or finalized entries, and finalize the vertex. For every improving relaxation, put the new entry at the front for a zero-cost edge or at the back for a one-cost edge.",
+          "grade": "correct",
+          "feedback": "The deque keeps current tentative distance layers in order because an improvement from distance d has distance d or d+1. Finalizing the next current entry is safe, including across zero-cost cycles."
+        },
+        {
+          "optionId": "B",
+          "approachId": "heap-dijkstra",
+          "text": "Run Dijkstra with a binary min-heap of tentative distances and skip outdated heap entries.",
+          "grade": "partial",
+          "feedback": "Nonnegative weights make Dijkstra correct for the entire domain. But maintaining a general priority heap adds removable ordering work when the only increments are zero and one."
+        },
+        {
+          "optionId": "C",
+          "approachId": "ordinary-bfs-cost",
+          "text": "Run ordinary vertex BFS, permanently accept each first discovery and sum the edge costs along that discovery route.",
+          "grade": "incorrect",
+          "feedback": "In the example, the direct edge may discover 1 with cost 1 before the two-edge route reaches it for zero credits. Fewest edges and least cost are different objectives."
+        },
+        {
+          "optionId": "D",
+          "approachId": "front-for-all-edges",
+          "text": "Use a deque but put every discovered entry at the front, and permanently finalize each vertex when first popped without comparing tentative distance priorities.",
+          "grade": "incorrect",
+          "feedback": "For ordered edges 0->1 cost 0, 0->2 cost 1, 1->2 cost 0, pushing both at the front pops 2 at cost 1 before 1. Finalizing it there misses the zero-credit route 0->1->2."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Unit-cost BFS layering generalizes to two adjacent cost layers when each edge adds either zero or one; a vertex must not be permanently fixed merely on discovery.",
+      "details": [
+        "Initialize distances to infinity and finalized to false; set s to zero and push (s,0) into a deque. Pop the front entry. Skip it if finalized or if its snapshot differs from the current distance. Otherwise finalize the vertex and scan its outgoing edges. If distance[u]+cost improves an unfinalized neighbor, update its distance and push a snapshot entry to the front for cost zero or back for cost one. Continue until empty; return the target distance or -1.",
+        "Zero-cost improvements go to the deque front and unit-cost improvements to the back. Snapshot/finalized checks discard stale entries before scanning edges. Ordinary FIFO would not preserve increasing weighted distance.",
+        "“Use tentative distances and a deque of (vertex,distanceSnapshot). Start s at zero. Pop from the front, skip stale or finalized entries, and finalize the vertex. For every improving relaxation, put the new entry at the front for a zero-cost edge or at the back for a one-cost edge.”: The deque keeps current tentative distance layers in order because an improvement from distance d has distance d or d+1. Finalizing the next current entry is safe, including across zero-cost cycles.",
+        "“Run Dijkstra with a binary min-heap of tentative distances and skip outdated heap entries.”: Nonnegative weights make Dijkstra correct for the entire domain. But maintaining a general priority heap adds removable ordering work when the only increments are zero and one.",
+        "“Run ordinary vertex BFS, permanently accept each first discovery and sum the edge costs along that discovery route.”: In the example, the direct edge may discover 1 with cost 1 before the two-edge route reaches it for zero credits. Fewest edges and least cost are different objectives.",
+        "“Use a deque but put every discovered entry at the front, and permanently finalize each vertex when first popped without comparing tentative distance priorities.”: For ordered edges 0->1 cost 0, 0->2 cost 1, 1->2 cost 0, pushing both at the front pops 2 at cost 1 before 1. Finalizing it there misses the zero-credit route 0->1->2."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b12-19-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "graph_traversal",
+    "mentalUnitId": "graph_bfs",
+    "difficulty": "hard",
+    "prompt": "Analyze zero-one-deque. V counts vertices and E directed edges. Use V-entry distance/finalized arrays and a preallocated circular deque of 2V fixed-size snapshot entries with constant-time front/back operations. Distances are nonnegative machine integers or an infinity sentinel. There is no hashing, recursion, input copying, shifting, or amortized growth. Include stale-entry processing and array initialization. Exclude input and scalar result; include arrays and deque. Explain why 2V slots suffice under the zero/one domain.",
+    "constraints": [
+      "Choose the tightest standard worst-case bound for the specified implementation."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "A",
+          "text": "O(V + E) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "B",
+          "text": "O((V + E) log V) time, O(V) auxiliary space"
+        },
+        {
+          "optionId": "C",
+          "text": "O(V + E) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "D",
+          "text": "O(VE) time, O(V) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "A"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Finalize each vertex once and scan its outgoing edges once using a 0-1 deque.",
+      "details": [
+        "The option “O(V + E) time, O(V) auxiliary space” is tight: current deque snapshots are processed in nondecreasing distance order. When first discovered from a current distance d, a vertex receives d or d+1; before finalization it can only improve once, from d+1 to d. Thus each vertex has at most two inserted snapshots, so 2V deque slots suffice and stale pops total O(V). Each finalized vertex scans its outgoing edges once, giving O(V+E) time including initialization. Arrays and deque occupy O(V). The option “O((V + E) log V) time, O(V) auxiliary space” adds an unused heap factor. The option “O(V + E) time, O(1) auxiliary space” drops working storage. The option “O(VE) time, O(V) auxiliary space” charges repeated edge scans even though only the single finalization scans a vertex’s list.",
+        "Time: O(V + E).",
+        "Auxiliary space: O(V)."
+      ]
+    }
+  },
+  "analyzedApproachId": "zero-one-deque",
+  "methodReveal": {
+    "title": "Maintain two adjacent distance layers",
+    "description": "Initialize distances to infinity and finalized to false; set s to zero and push (s,0) into a deque. Pop the front entry. Skip it if finalized or if its snapshot differs from the current distance. Otherwise finalize the vertex and scan its outgoing edges. If distance[u]+cost improves an unfinalized neighbor, update its distance and push a snapshot entry to the front for cost zero or back for cost one. Continue until empty; return the target distance or -1."
+  }
+}

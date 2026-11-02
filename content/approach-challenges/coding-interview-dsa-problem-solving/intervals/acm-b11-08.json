@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-08",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b11-08-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "sweep_line_intro",
+    "difficulty": "medium",
+    "prompt": "Time under multiple alarms\n\nEach of n sensors reports one half-open alarm interval [start,end). Return the total length of time during which at least k sensors are alarming. Duplicate intervals represent different sensors. The unsorted input is immutable.\n\nInput: intervals = [[1,6],[3,8],[5,7]], k = 2\nOutput: 4\nAt least two alarms are active throughout [3,7).\n\nInput: intervals = [[0,2],[2,5]], k = 2\nOutput: 0\n\nConstraints: 1 ≤ k ≤ n ≤ 200000; integer endpoints satisfy 0 ≤ start < end ≤ 1000000000. Time is continuous, so isolated points have zero length. Use comparison-based ordering of endpoints. Choose the best worst-case time; among tied methods avoid unnecessary auxiliary storage.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "grouped-events-duration",
+          "text": "Create +1 start and −1 end events and sort them by time. Before applying all deltas at a time x, add x−previousTime if the previous active count is at least k. Apply the entire group and continue.",
+          "grade": "correct",
+          "feedback": "The active count is constant between consecutive event times. Measuring that span before changing the count uses the correct coverage on the whole span; grouped ties add no artificial duration."
+        },
+        {
+          "optionId": "B",
+          "approachId": "merge-union-only",
+          "text": "Merge the intervals into their union and return the total union length whenever n is at least k.",
+          "grade": "incorrect",
+          "feedback": "Union loses multiplicity. For [[0,2],[4,6]] and k=2, the union has length 4, but no time has two alarms, so the answer is 0."
+        },
+        {
+          "optionId": "C",
+          "approachId": "count-before-span",
+          "text": "Sort and group events, apply the deltas at x first, and use that updated count to decide whether to add x−previousTime.",
+          "grade": "incorrect",
+          "feedback": "The new count belongs after x. For [[1,4]] with k=1, this omits the span [1,4) and returns 0 instead of 3."
+        },
+        {
+          "optionId": "D",
+          "approachId": "rescan-between-events",
+          "text": "Sort distinct endpoints. For each consecutive pair of endpoints, rescan every input interval to count how many cover that span, adding its length when the count is at least k.",
+          "grade": "incorrect",
+          "feedback": "This computes the right duration, but repeatedly rescans all sensors for every span. Updating a running count at events avoids that brute-force repetition."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Integrate coverage multiplicity over spans rather than retaining only union or maximum count.",
+      "details": [
+        "Build 2n events in a new array. Sort by time with iterative bottom-up merge sort and one reusable buffer. Walk groups of equal times, measure the preceding span using the previous count, then apply the group’s deltas. Keep one count, previous time and total.",
+        "Measure the span before an event time using the old active count, then apply all deltas at that time together. Individual intermediate equal-time counts describe no positive-duration span and must not add duration.",
+        "“Create +1 start and −1 end events and sort them by time. Before applying all deltas at a time x, add x−previousTime if the previous active count is at least k. Apply the entire group and continue.”: The active count is constant between consecutive event times. Measuring that span before changing the count uses the correct coverage on the whole span; grouped ties add no artificial duration.",
+        "“Merge the intervals into their union and return the total union length whenever n is at least k.”: Union loses multiplicity. For [[0,2],[4,6]] and k=2, the union has length 4, but no time has two alarms, so the answer is 0.",
+        "“Sort and group events, apply the deltas at x first, and use that updated count to decide whether to add x−previousTime.”: The new count belongs after x. For [[1,4]] with k=1, this omits the span [1,4) and returns 0 instead of 3.",
+        "“Sort distinct endpoints. For each consecutive pair of endpoints, rescan every input interval to count how many cover that span, adding its length when the count is at least k.”: This computes the right duration, but repeatedly rescans all sensors for every span. Updating a running count at events avoids that brute-force repetition."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-08-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "sweep_line_intro",
+    "difficulty": "medium",
+    "prompt": "For grouped-events-duration, n is the sensor count. Include the 2n event array and iterative merge-sort buffer as auxiliary storage. Choose the tightest standard worst-case pair.",
+    "constraints": [
+      "Analyze only the named method. Count all temporary arrays and the call stack; exclude the supplied input and returned output. Numeric comparisons, assignments and arithmetic take constant time, with no overflow.",
+      "No hashing or amortized data structure is used. All loops and binary searches are iterative; there is no recursive stack."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "pair-1",
+          "text": "Time O(n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-2",
+          "text": "Time O(n log n), auxiliary space O(1)"
+        },
+        {
+          "optionId": "pair-3",
+          "text": "Time O(n²), auxiliary space O(n)"
+        },
+        {
+          "optionId": "pair-4",
+          "text": "Time O(n log n), auxiliary space O(n)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "pair-4"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Sorting endpoint events dominates one sweep over equal-time groups.",
+      "details": [
+        "Building and scanning the events are linear; comparison merge sort dominates with O(n log n) time. The event array and reusable buffer each occupy O(n), with constant loop state and no recursive stack. Coordinate magnitude does not set the number of processed spans.",
+        "Time: O(n log n).",
+        "Auxiliary space: O(n).",
+        "Iterative bottom-up comparison merge sort of 2n events; constant-time endpoint arithmetic.",
+        "“Time O(n), auxiliary space O(n)”: The events still require comparison sorting; a linear event scan alone omits that phase.",
+        "“Time O(n log n), auxiliary space O(1)”: The 2n event records and merge buffer must be counted as auxiliary arrays.",
+        "“Time O(n²), auxiliary space O(n)”: Each event is processed once after sorting. There is no repeated rescan of all sensors per span."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-1",
+          "text": "The events still require comparison sorting; a linear event scan alone omits that phase."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-2",
+          "text": "The 2n event records and merge buffer must be counted as auxiliary arrays."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "pair-3",
+          "text": "Each event is processed once after sorting. There is no repeated rescan of all sensors per span."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "grouped-events-duration",
+  "methodReveal": {
+    "title": "Analyze grouped-events-duration",
+    "description": "Build 2n events in a new array. Sort by time with iterative bottom-up merge sort and one reusable buffer. Walk groups of equal times, measure the preceding span using the previous count, then apply the group’s deltas. Keep one count, previous time and total."
+  }
+}

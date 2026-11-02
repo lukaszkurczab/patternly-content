@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b01-08",
+  "problemVersion": "2",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "complexity_and_constraints",
+  "requiredFamilyIds": [
+    "complexity_and_constraints"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "aggregate-geometric-buffer-copy-cost",
+    "difficulty": "medium",
+    "questionId": "acm-b01-08-q1",
+    "prompt": "Event notebook. Consume n events from a forward-only stream. An event is append(x), which adds a signed 32-bit value to the notebook, or read(i), which reads its zero-based position and adds that value to a checksum. Each read index refers to a value already appended. Return the checksum after all events. The notebook starts empty; 1 <= n <= 200,000, at least one event appends, and the checksum fits signed 64-bit. Events arrive one at a time and cannot be rewound or inspected in advance. An append value can be requested repeatedly later. Choose minimum worst-case total time over the stream, then minimum asymptotic peak auxiliary storage among those methods. No fixed universe of values is assumed.\n\nExample 1: Input: [append(6),append(-2),read(1),append(9),read(0),read(1)]. Output: 2.\nExample 2: Input: [append(4),append(4)]. Output: 0.\n\nAvailable storage consists of flat buffers with indexed access. Allocating capacity c and copying c fixed-size entries each cost proportional to c. A buffer must be replaced to increase capacity, and the old buffer is released immediately after its entries are copied. Buffer contents are auxiliary storage; only the checksum is output.",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "double-on-full",
+          "text": "Keep a buffer with capacity initially one. When full, replace it with double the capacity and copy its used entries. Append at the next slot and answer reads by index.",
+          "grade": "correct",
+          "feedback": "Copies happen only when capacity is exhausted. The increasingly spaced replacements let the total copying be charged across all appends, while any earlier value stays directly accessible."
+        },
+        {
+          "optionId": "B",
+          "approachId": "triple-on-full",
+          "text": "Keep a buffer with capacity initially one. When full, replace it with triple the capacity and copy its used entries. Append at the next slot and answer reads by index.",
+          "grade": "correct",
+          "feedback": "Tripling also spaces replacements geometrically. It has the same optimal asymptotic total work and peak storage as doubling; the constant amount of spare capacity does not change that grade."
+        },
+        {
+          "optionId": "C",
+          "approachId": "increase-one-slot",
+          "text": "Keep an indexed buffer, but when full replace it with capacity one larger and copy its entries.",
+          "grade": "partial",
+          "feedback": "It correctly preserves all values and supports indexed reads. However, it recognizes the need for storage without leaving room for later appends, so long append runs repeatedly copy almost the entire notebook."
+        },
+        {
+          "optionId": "D",
+          "approachId": "retain-only-latest",
+          "text": "Keep only the most recently appended value and use it for every read.",
+          "grade": "incorrect",
+          "feedback": "For [append(6),append(-2),read(0)], the required checksum is 6, but this adds -2. Earlier positions remain queryable."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Evaluate replacements across the full event sequence, rather than treating a costly resize as the cost of every event.",
+      "details": [
+        "Start with capacity one and size zero. On append, if size equals capacity, allocate double capacity, copy all used entries, and release the old buffer. Store the new value at size and increase size. On read(i), add buffer[i] to the checksum. Process events iteratively and return the checksum.",
+        "A resize is expensive individually, but capacities 1,2,4,8 cause earlier entries to be recopied only in a geometric series. During a resize the old and doubled buffer coexist, so peak memory includes both. This supports an amortized sequence claim, not constant worst-case latency for every append.",
+        "“Keep a buffer with capacity initially one. When full, replace it with double the capacity and copy its used entries. Append at the next slot and answer reads by index.”: Copies happen only when capacity is exhausted. The increasingly spaced replacements let the total copying be charged across all appends, while any earlier value stays directly accessible.",
+        "“Keep a buffer with capacity initially one. When full, replace it with triple the capacity and copy its used entries. Append at the next slot and answer reads by index.”: Tripling also spaces replacements geometrically. It has the same optimal asymptotic total work and peak storage as doubling; the constant amount of spare capacity does not change that grade.",
+        "“Keep an indexed buffer, but when full replace it with capacity one larger and copy its entries.”: It correctly preserves all values and supports indexed reads. However, it recognizes the need for storage without leaving room for later appends, so long append runs repeatedly copy almost the entire notebook.",
+        "“Keep only the most recently appended value and use it for every read.”: For [append(6),append(-2),read(0)], the required checksum is 6, but this adds -2. Earlier positions remain queryable."
+      ]
+    }
+  },
+  "complexityQuestion": {
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "complexity_and_constraints",
+    "mentalUnitId": "aggregate-geometric-buffer-copy-cost",
+    "difficulty": "medium",
+    "questionId": "acm-b01-08-q2",
+    "prompt": "Analyze double-on-full for n events. Give the tight worst-case total time for the complete stream and peak auxiliary space. This is a deterministic aggregate/amortized analysis, not an average over random events; a single resize may copy many values. Count both buffers while copying, allocation work, and stream processing. Only one current event is retained.",
+    "constraints": [
+      "Choose the tightest standard bound for the complete execution. Count peak simultaneously live auxiliary storage; exclude supplied input and required output.",
+      "Word arithmetic, indexing, and copying one fixed-size element take constant time. No hashing or recursion is used."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear",
+          "text": "O(n) total time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "quadratic",
+          "text": "O(n²) total time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "log-space",
+          "text": "O(n) total time, O(log n) auxiliary space"
+        },
+        {
+          "optionId": "constant",
+          "text": "O(1) total time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Geometric copying gives linear total work while buffer capacity grows with stored events.",
+      "details": [
+        "Across a stream with a appends, copied buffer sizes are 1,2,4,... and sum to less than 2a. The analogous geometric sum also bounds allocated capacity, so all n events plus allocation/copying take O(n) total time. At a resize both old and new buffers are live, but their combined capacity is O(a); a can be n, making worst-case auxiliary storage O(n). The checksum is output. No hashing, recursion, or probabilistic assumption is involved.",
+        "O(n) total, amortized over events",
+        "Auxiliary space: O(n).",
+        "“O(n²) total time, O(n) auxiliary space”: This charges a full resize to every append. Doubling only copies at geometrically increasing sizes; their sum is linear.",
+        "“O(n) total time, O(log n) auxiliary space”: There are logarithmically many replacements, but the largest retained buffer stores linearly many values.",
+        "“O(1) total time, O(n) auxiliary space”: Each event must be consumed, and n appends require n stores even without resize work."
+      ],
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "quadratic",
+          "text": "This charges a full resize to every append. Doubling only copies at geometrically increasing sizes; their sum is linear."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "log-space",
+          "text": "There are logarithmically many replacements, but the largest retained buffer stores linearly many values."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "constant",
+          "text": "Each event must be consumed, and n appends require n stores even without resize work."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "double-on-full",
+  "methodReveal": {
+    "title": "Indexed buffer with doubling",
+    "description": "Start with capacity one and size zero. On append, if size equals capacity, allocate double capacity, copy all used entries, and release the old buffer. Store the new value at size and increase size. On read(i), add buffer[i] to the checksum. Process events iteratively and return the checksum."
+  }
+}

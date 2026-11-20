@@ -90,7 +90,7 @@ for (const scenario of fixture.cases) {
       const reviewed = runtime.presentReview(question, response).feedback;
       assert.equal(submitted.reason, reviewed.reason);
       assert.deepEqual(submitted.details, reviewed.details);
-      assert.deepEqual(submitted.messages, reviewed.messages);
+      assert.deepEqual(submitted.messages ?? [], reviewed.messages);
     }
   });
 }

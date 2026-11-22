@@ -453,10 +453,10 @@ test("Coding Interview simulation profile emits the blueprint and exact checksum
   const built = await buildTrack({ rootDirectory, outputRoot, trackId: "coding-interview-dsa-problem-solving" });
   assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
   assert.equal(built.artifact.questions.length, 3404, "paired tasks must not change the legacy canonical question count");
-  assert.equal(built.artifact.approachChallengeProblems.length, 36);
-  assert.equal(built.artifact.approachChallengeProblems.reduce((count, problem) => count + 2, 0), 72);
-  assert.equal(built.approachChallengeManifest.freeProblemCount, 6);
-  assert.equal(built.approachChallengeManifest.premiumProblemCount, 30);
+  assert.equal(built.artifact.approachChallengeProblems.length, 472);
+  assert.equal(built.artifact.approachChallengeProblems.reduce((count, problem) => count + 2, 0), 944);
+  assert.equal(built.approachChallengeManifest.freeProblemCount, 16);
+  assert.equal(built.approachChallengeManifest.premiumProblemCount, 456);
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
 });
 
@@ -1168,7 +1168,7 @@ test("CLI executes a hermetic single-track validate/test/build", async (t) => {
   await writeTrackQuestion(rootDirectory, trackId);
   const common = ["--root", rootDirectory];
   const validate = await execFileAsync(process.execPath, [builderPath.pathname, "validate", "--track", trackId, ...common], { cwd: rootDirectory });
-  assert.match(validate.stdout, /Validated 1 question/);
+  assert.match(validate.stdout, /Validated 1 canonical question/);
   const contentTest = await execFileAsync(process.execPath, [builderPath.pathname, "test", "--track", trackId, ...common], { cwd: rootDirectory });
   assert.match(contentTest.stdout, /Tested 1 canonical answer/);
   const build = await execFileAsync(process.execPath, [builderPath.pathname, "build", "--track", trackId, ...common, "--output-root", outputRoot], { cwd: rootDirectory });
